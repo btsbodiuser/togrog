@@ -1,0 +1,5 @@
+# Only index.php is public; config.php holds DB credentials
+<FilesMatch "^(?!index\.php$)">
+  Require all denied
+</FilesMatch>
+Options -Indexes

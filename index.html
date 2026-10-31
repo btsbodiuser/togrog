@@ -1,0 +1,1150 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F6B57">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Төгрөг">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Төгрөг санхүү</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;500;600;700;800&family=Roboto:wght@500;700&display=swap">
+</head>
+<body>
+<style>
+/* Layout: one-column phone app shell, sticky month header, fixed bottom tab bar, bottom sheets for input */
+:root{
+  --bg:#EDF1EE; --surface:#FFFFFF; --surface-2:#E2E8E4; --fg:#13201A; --muted:#5A6A62; --line:#D2DBD6;
+  --accent:#0F6B57; --accent-fg:#FFFFFF; --accent-soft:#D4E9E1;
+  --income:#1D7A3B; --expense:#B4451F; --warn:#A86A12; --danger:#B42318;
+  --f-display:'Roboto',system-ui,-apple-system,sans-serif;
+  --f-body:'Roboto Condensed','Roboto',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0D1411; --surface:#151F1B; --surface-2:#1E2A25; --fg:#E5EEE9; --muted:#93A59C; --line:#2A3832;
+  --accent:#52C4A2; --accent-fg:#05231A; --accent-soft:#163A30;
+  --income:#5CC27B; --expense:#F08A62; --warn:#E2AE4A; --danger:#F07167; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1411; --surface:#151F1B; --surface-2:#1E2A25; --fg:#E5EEE9; --muted:#93A59C; --line:#2A3832;
+  --accent:#52C4A2; --accent-fg:#05231A; --accent-soft:#163A30;
+  --income:#5CC27B; --expense:#F08A62; --warn:#E2AE4A; --danger:#F07167; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+.app{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:8px;padding-block:14px 10px}
+.brand{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.brand i{width:26px;height:26px;border-radius:8px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-style:normal;font-size:14px}
+.sync{border:0;background:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;padding:0;color:var(--muted)}
+.sync svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sync[data-s="ok"]{color:var(--accent)}
+.sync[data-s="busy"] svg{animation:pulse 1s ease-in-out infinite alternate}
+.sync[data-s="off"]{color:var(--warn)}
+.sync[data-s="auth"]{color:var(--danger)}
+@keyframes pulse{to{opacity:.3}}
+.bell{position:relative}
+.bell b{position:absolute;top:0;right:-2px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:var(--danger);color:var(--surface);font:700 10px/16px var(--f-body);text-align:center}
+@media (max-width:400px){.brand .bt{display:none}}
+.nt{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;padding:12px 0;border:0;border-bottom:1px solid var(--line);background:none}
+.nt:last-child{border-bottom:0}
+.nt .dot{margin-top:5px}
+.nt span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.nt small{color:var(--muted);font-size:12px}
+.nt.new b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--danger);margin-left:6px;vertical-align:middle}
+.month{display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px}
+.month button{border:0;background:none;width:32px;height:32px;border-radius:50%;font-size:18px;line-height:1}
+.month button:hover{background:var(--surface-2)}
+.month span{font-weight:700;font-size:13px;min-width:112px;text-align:center}
+main{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+h2{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:10px}
+.link{border:0;background:none;color:var(--accent);font-weight:700;font-size:13px;padding:4px}
+.hero{background:var(--accent);color:var(--accent-fg);border:0}
+.hero .lbl{font-size:13px;opacity:.8;font-weight:600}
+.hero .big{font-family:var(--f-display);font-weight:700;font-size:clamp(28px,8vw,38px);letter-spacing:-.02em;margin:2px 0 12px;overflow-wrap:anywhere}
+.accs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -4px;padding:0 4px}
+.accs::-webkit-scrollbar{display:none}
+.acc{flex:0 0 auto;background:color-mix(in srgb,var(--accent-fg) 14%,transparent);border-radius:10px;padding:8px 12px;border:0;text-align:left;color:inherit}
+.acc small{display:block;font-size:12px;opacity:.8}
+.acc b{font-size:14px}
+.trio{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.trio div{min-width:0}
+.trio small{display:block;color:var(--muted);font-size:12px;font-weight:600}
+.trio b{display:block;font-size:15px;overflow-wrap:anywhere}
+.inc{color:var(--income)}.exp{color:var(--expense)}
+.note{font-size:13px;color:var(--muted);margin:10px 0 0;padding-top:10px;border-top:1px dashed var(--line)}
+.note b{color:var(--fg)}
+.banner{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--accent-soft);border-radius:var(--r);padding:12px 14px;font-size:13px}
+.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:700;background:var(--surface-2)}
+.btn.pri{background:var(--accent);color:var(--accent-fg)}
+.btn.dng{background:none;color:var(--danger);border:1px solid var(--line)}
+.btn.sm{padding:7px 11px;font-size:13px}
+.btn.full{width:100%}
+.bud{display:flex;flex-direction:column;gap:12px}
+.bud-row{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:baseline;border:0;background:none;text-align:left;padding:0;width:100%}
+.bud-row .nm{font-weight:700;display:flex;align-items:center;gap:8px;min-width:0}
+.bud-row .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bud-row .amt{font-size:13px;color:var(--muted)}
+.bar{grid-column:1/-1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:4px}
+.bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}
+.bar.warn i{background:var(--warn)}.bar.over i{background:var(--danger)}
+.bud-row .st{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.bud-row .st.over{color:var(--danger);font-weight:700}
+.dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.list{display:flex;flex-direction:column}
+.tx{display:grid;grid-template-columns:38px 1fr auto;gap:12px;align-items:center;padding:10px 0;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.list .tx:last-child{border-bottom:0}
+.av{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff}
+.tx .t{min-width:0}
+.tx .t b{display:block;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx .t small{display:block;color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx .a{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.day-h{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--muted);padding:14px 2px 2px;text-transform:none}
+.empty{color:var(--muted);text-align:center;padding:28px 8px;font-size:14px}
+.search{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 14px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.donut-wrap{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:center}
+@media (max-width:420px){.donut-wrap{grid-template-columns:1fr;justify-items:center}}
+.donut{width:150px;height:150px}
+.donut .c1{fill:var(--muted);font-size:9px;font-family:var(--f-body);font-weight:600}
+.donut .c2{fill:var(--fg);font-size:13px;font-family:var(--f-body);font-weight:800}
+.legend{display:flex;flex-direction:column;gap:8px;width:100%;min-width:0}
+.legend div{display:grid;grid-template-columns:auto 1fr auto auto;gap:8px;align-items:center;font-size:13px}
+.legend span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legend em{font-style:normal;color:var(--muted);font-size:12px;min-width:34px;text-align:right}
+.chart{width:100%;height:auto;display:block}
+.chart .g{stroke:var(--line);stroke-width:1}
+.chart .lb{fill:var(--muted);font-size:10px;font-family:var(--f-body)}
+.chart .lb.cur{fill:var(--fg);font-weight:800}
+.chart .bi{fill:var(--income)}.chart .be{fill:var(--expense)}
+.keys{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
+.keys span{display:inline-flex;align-items:center;gap:6px}
+.rows{display:flex;flex-direction:column}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 0;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left}
+.rows .row:last-child{border-bottom:0}
+.row .l{display:flex;align-items:center;gap:10px;min-width:0}
+.row .l span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row small{color:var(--muted);font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.muted{color:var(--muted);font-size:13px}
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+nav.tabs div{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.tabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;font-size:11px;font-weight:700;color:var(--muted);text-decoration:none;border-radius:10px}
+nav.tabs a[aria-current="page"]{color:var(--accent)}
+nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.fab{position:fixed;z-index:26;right:max(18px,calc(50vw - 262px));right:max(18px,calc(50vw - 262px),calc(env(safe-area-inset-right,0px) + 18px));bottom:calc(78px + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:18px;border:0;background:var(--accent);color:var(--accent-fg);font-size:30px;line-height:1;box-shadow:0 8px 24px color-mix(in srgb,var(--accent) 40%,transparent)}
+#scrim{position:fixed;inset:0;z-index:40;background:rgba(5,15,10,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:20px 20px 0 0;max-height:92%;overflow-y:auto;padding:10px max(18px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(30px);opacity:.5}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+.grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 12px}
+.sheet h3{font-family:var(--f-display);font-weight:500;font-size:17px;margin:0 0 14px}
+.form{display:flex;flex-direction:column;gap:14px}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)}
+.inp{width:100%;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:11px 12px;font-size:15px;font-weight:600;color:var(--fg)}
+.amt-inp{font-family:var(--f-display);font-size:28px;font-weight:700;padding:12px;letter-spacing:-.01em}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface-2);border-radius:12px;padding:3px;gap:3px}
+.seg button{border:0;background:none;border-radius:9px;padding:9px 4px;font-weight:700;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.cats{display:flex;flex-wrap:wrap;gap:6px}
+.err{color:var(--danger);font-size:13px;font-weight:600;min-height:1em;margin:0}
+.actions{display:flex;gap:8px}
+.actions .btn{flex:1}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:30px;height:30px;border-radius:50%;border:3px solid transparent}
+.sw[aria-pressed="true"]{border-color:var(--fg)}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:13px;max-width:calc(100% - 32px)}
+.quick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.qk{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:8px 10px;text-align:left;min-width:0}
+.qk:hover{border-color:var(--accent)}
+.qk span{min-width:0;display:flex;flex-direction:column}
+.qk b{font-size:13px;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qk small{font-size:12px;color:var(--muted);font-weight:600}
+.check{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.check input{width:20px;height:20px;accent-color:var(--accent);flex:0 0 auto}
+.check span{display:flex;flex-direction:column;flex:1;min-width:0}
+.check b{font-size:14px}.check small{font-size:12px;color:var(--muted)}
+.st b{font-weight:800}
+.sheet-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.sms-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--accent-soft);color:var(--accent)}
+.sms-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.sms-ta{min-height:150px;font-family:var(--f-body)!important;font-size:14px!important}
+.sms-it{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.sms-it.dup{border-style:dashed}
+.sms-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.sms-top input{width:20px;height:20px;accent-color:var(--accent)}
+.sms-amt{font-family:var(--f-display);font-weight:700;font-size:20px}
+.sms-top em{font-style:normal;font-size:12px;font-weight:700;color:var(--warn)}
+.sms-it details{font-size:12px;color:var(--muted)}
+.sms-it details p{margin:6px 0 0;overflow-wrap:anywhere}
+.sms-it summary{cursor:pointer;font-weight:700}
+textarea.inp{min-height:120px;font-family:var(--f-body);font-size:12px;font-weight:400}
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="brand"><i>₮</i><span class="bt">Төгрөг</span><button class="sync" id="sync" data-act="sync-now" hidden><svg viewBox="0 0 24 24"><path d="M7 18.5a4.5 4.5 0 0 1-.7-8.95A6 6 0 0 1 17.8 8.6 4.2 4.2 0 0 1 17.5 18.5z"/></svg></button><button class="sync bell" id="bell" data-act="notif" aria-label="Мэдэгдэл"><svg viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><b id="bell-n" hidden></b></button></div>
+    <div class="month" id="month">
+      <button data-act="m-prev" aria-label="Өмнөх сар">‹</button>
+      <span id="m-label" class="num"></span>
+      <button data-act="m-next" aria-label="Дараах сар">›</button>
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+
+<button class="fab" data-act="tx-new" aria-label="Гүйлгээ нэмэх">+</button>
+
+<nav class="tabs" aria-label="Цэс"><div>
+  <a href="#home" data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Нүүр</a>
+  <a href="#txs" data-tab="txs"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>Гүйлгээ</a>
+  <a href="#budget" data-tab="budget"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M15.5 15h2.5M7 3h10"/></svg>Төсөв</a>
+  <a href="#report" data-tab="report"><svg viewBox="0 0 24 24"><path d="M5 20V11M11 20V4M17 20v-7M2 20h20"/></svg>Тайлан</a>
+  <a href="#prefs" data-tab="prefs"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M2.5 12h3M18.5 12h3M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg>Тохиргоо</a>
+</div></nav>
+
+<div id="scrim" hidden><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheet"></div></div></div>
+<div id="toast" hidden></div>
+<input type="file" id="f-import" accept="application/json,.json" hidden>
+
+<script>
+(async function(){
+'use strict';
+const KEY='togrog.finance.v1';
+const COLORS=['#2F855A','#C05621','#2B6CB0','#B83280','#6B46C1','#0987A0','#B7791F','#C53030','#4A5568','#38A169','#D69E2E','#805AD5','#DD6B20','#319795','#718096'];
+const WD=['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
+const ACC_TYPES={cash:'Бэлэн мөнгө',bank:'Банкны данс',card:'Кредит карт',saving:'Хадгаламж'};
+/* Banks licensed in Mongolia. key = lowercase fragment matched in account names, rx = how the bank appears in its SMS */
+const BANK_LIST=[
+  {id:'khan',name:'Хаан банк',short:'Хаан',key:'хаан',color:'#1D7A3B',rx:/khan|хаан/i},
+  {id:'golomt',name:'Голомт банк',short:'Голомт',key:'голомт',color:'#2B6CB0',rx:/golomt|голомт/i},
+  {id:'tdb',name:'Худалдаа хөгжлийн банк',short:'ХХБ',key:'худалдаа',color:'#1A4E8A',rx:/tdb|худалдаа хөгжил|hudaldaa|ххб/i},
+  {id:'xac',name:'ХасБанк',short:'Хас',key:'хас',color:'#C05621',rx:/xac|хас ?банк|хас /i},
+  {id:'state',name:'Төрийн банк',short:'Төрийн',key:'төрийн',color:'#0987A0',rx:/state ?bank|төрийн банк|turiin/i},
+  {id:'capitron',name:'Капитрон банк',short:'Капитрон',key:'капитрон',color:'#6B46C1',rx:/capitron|капитрон/i},
+  {id:'bogd',name:'Богд банк',short:'Богд',key:'богд',color:'#B7791F',rx:/bogd|богд/i},
+  {id:'mbank',name:'М банк',short:'М банк',key:'м банк',color:'#B83280',rx:/m ?bank|м банк/i},
+  {id:'arig',name:'Ариг банк',short:'Ариг',key:'ариг',color:'#319795',rx:/arig|ариг/i},
+  {id:'nib',name:'Үндэсний хөрөнгө оруулалтын банк',short:'ҮХОБ',key:'үндэсний',color:'#4A5568',rx:/nibank|\bnib\b|үндэсний хөрөнгө|ухоб|үхоб/i},
+  {id:'trans',name:'Транс банк',short:'Транс',key:'транс',color:'#805AD5',rx:/trans ?bank|транс банк/i},
+  {id:'ckb',name:'Чингис хаан банк',short:'Чингис хаан',key:'чингис',color:'#C53030',rx:/ckbank|\bckb\b|chinggis|чингис хаан/i},
+  {id:'credit',name:'Кредит банк',short:'Кредит',key:'кредит банк',color:'#DD6B20',rx:/credit ?bank|кредит банк/i}];
+const bankOf=a=>a&&a.bank?BANK_LIST.find(b=>b.id===a.bank):null;
+const bankAccName=(b,type)=>type==='card'?b.short+' карт':type==='saving'?b.short+' хадгаламж':b.name;
+const TYPE_LBL={expense:'Зарлага',income:'Орлого',transfer:'Шилжүүлэг'};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const grp=n=>Math.round(Math.abs(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g,',');
+const fmt=n=>(n<0?'−':'')+grp(n)+'₮';
+const compact=n=>n>=1e6?(+(n/1e6).toFixed(1))+' сая':n>=1e3?Math.round(n/1e3)+' мян':String(Math.round(n));
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const today=()=>iso(new Date());
+const ym=d=>d.slice(0,7);
+const shiftM=(m,k)=>{let[y,mo]=m.split('-').map(Number);mo+=k;while(mo<1){mo+=12;y--}while(mo>12){mo-=12;y++}return y+'-'+String(mo).padStart(2,'0')};
+const mLabel=m=>m.slice(0,4)+' оны '+Number(m.slice(5))+'-р сар';
+const dim=m=>new Date(+m.slice(0,4),+m.slice(5),0).getDate();
+function dayLabel(d){
+  const t=new Date();if(d===iso(t))return 'Өнөөдөр';
+  t.setDate(t.getDate()-1);if(d===iso(t))return 'Өчигдөр';
+  return Number(d.slice(5,7))+'-р сарын '+Number(d.slice(8))+', '+WD[new Date(d+'T00:00').getDay()];
+}
+const parseAmt=v=>Number(String(v).replace(/[^\d]/g,''))||0;
+
+/* ---------- data ---------- */
+/* Loan categories: tx in them carry `who` (person). loan:'out' = lent, 'in' = paid back */
+const LOAN_CATS=()=>[{id:'e15',name:'Зээл өгсөн',kind:'expense',color:'#9C4221',loan:'out'},{id:'i5',name:'Зээл буцаан авсан',kind:'income',color:'#2C7A7B',loan:'in'}];
+function defaults(){
+  const ex=['Хоол хүнс','Кафе, ресторан','Тээвэр, такси','Шатахуун','Орон сууц','Ашиглалтын төлбөр','Утас, интернет','Эрүүл мэнд','Хувцас','Боловсрол','Хүүхэд','Зугаа цэнгэл','Спорт','Бэлэг','Бусад зарлага'];
+  const inc=['Цалин','Бизнесийн орлого','Нэмэлт орлого','Хүүгийн орлого','Бусад орлого'];
+  const cats=ex.map((n,i)=>({id:'e'+i,name:n,kind:'expense',color:COLORS[i%COLORS.length]}))
+    .concat(inc.map((n,i)=>({id:'i'+i,name:n,kind:'income',color:['#1D7A3B','#0987A0','#6B46C1','#B7791F','#4A5568'][i]})));
+  cats.push(...LOAN_CATS());
+  return {v:1,sample:false,loanCats:1,accounts:[
+    {id:'a1',name:'Бэлэн мөнгө',type:'cash',initial:0},
+    {id:'a2',name:'Харилцах данс',type:'bank',initial:0},
+    {id:'a3',name:'Хадгаламж',type:'saving',initial:0}],categories:cats,tx:[],budgets:{},recurring:[],goals:[]};
+}
+/* Recurring rules → generate a tx for each month whose day has arrived; r.done remembers months already generated (deleting a tx won't bring it back).
+   The tx id is rule id + month, so two offline devices generate the same record instead of a duplicate. */
+function applyRecurring(st){
+  let n=0;const now=today(),cm=ym(now);
+  for(const r of st.recurring||[]){
+    r.done=r.done||[];let m=r.start,guard=0;
+    while(m<=cm&&guard++<240){
+      const d=m+'-'+String(Math.min(r.day,dim(m))).padStart(2,'0');
+      if(d<=now&&!r.done.includes(m)){st.tx.push({id:r.id+'_'+m,type:r.type,amount:r.amount,date:d,catId:r.catId||null,accId:r.accId,toAccId:r.toAccId||null,note:r.note||'',recId:r.id,ts:Date.now()});r.done.push(m);n++}
+      m=shiftM(m,1);
+    }
+    while(r.start<cm&&r.done.includes(r.start))r.start=shiftM(r.start,1);
+    r.done=r.done.filter(x=>x>=r.start);
+  }
+  return n;
+}
+const monthsBetween=(a,b)=>(+b.slice(0,4)-+a.slice(0,4))*12+(+b.slice(5)-+a.slice(5));
+function sample(){
+  const s=defaults();s.sample=true;
+  // cash + current accounts at 2 banks + cards from 2 banks + savings at 3 banks
+  s.accounts=[{id:'a1',name:'Бэлэн мөнгө',type:'cash',initial:85000},
+    {id:'a2',name:'Хаан банк',type:'bank',bank:'khan',initial:1450000},
+    {id:'a3',name:'Голомт банк',type:'bank',bank:'golomt',initial:620000},
+    {id:'a4',name:'ХХБ карт',type:'card',bank:'tdb',initial:0},
+    {id:'a5',name:'Голомт карт',type:'card',bank:'golomt',initial:0},
+    {id:'a6',name:'Хаан хадгаламж',type:'saving',bank:'khan',initial:4800000},
+    {id:'a7',name:'Хас хадгаламж',type:'saving',bank:'xac',initial:2500000},
+    {id:'a8',name:'Төрийн хадгаламж',type:'saving',bank:'state',initial:1200000}];
+  let seed=20261030;const rnd=()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+  const r=(a,b,step=500)=>Math.round((a+rnd()*(b-a))/step)*step;
+  const pick=a=>a[Math.floor(rnd()*a.length)];
+  const now=today(),cm=ym(now);
+  const add=(m,day,type,amount,catId,accId,note,toAccId)=>{const d=m+'-'+String(Math.min(day,dim(m))).padStart(2,'0');if(d>now)return null;const t={id:uid(),type,amount,date:d,catId:catId||null,accId,toAccId:toAccId||null,note:note||''};s.tx.push(t);return t};
+  const day=()=>1+Math.floor(rnd()*28);
+  for(let k=2;k>=0;k--){  // last 3 months
+    const m=shiftM(cm,-k);
+    add(m,19,'income',r(450000,900000,10000),'i2','a3','Гэрээт ажил');
+    add(m,15,'expense',r(140000,260000,1000),'e5','a3','Цахилгаан, дулаан, ус');
+    for(let i=0;i<8;i++)add(m,day(),'expense',r(28000,135000),'e0',pick(['a2','a2','a4','a1']),['Номин супермаркет','E-Mart','Хүнсний дэлгүүр','Мах, сүү'][i%4]);
+    for(let i=0;i<6;i++)add(m,day(),'expense',r(12000,58000),'e1',pick(['a2','a5','a1']),['Кофе','Үдийн хоол','Найзуудтай оройн хоол'][i%3]);
+    for(let i=0;i<7;i++)add(m,day(),'expense',r(2000,16000),'e2','a1',i%2?'Такси':'Автобус');
+    for(let i=0;i<3;i++)add(m,day(),'expense',r(80000,140000,1000),'e3',pick(['a4','a2']),'АИ-92');
+    if(rnd()<.7)add(m,day(),'expense',r(60000,320000,1000),'e8','a5','Хувцас');
+    if(rnd()<.8)add(m,day(),'expense',r(25000,110000,1000),'e11','a5','Кино, тоглолт');
+    add(m,day(),'expense',r(15000,90000,1000),'e7','a4','Эмийн сан');
+    add(m,day(),'transfer',400000,null,'a2','АТМ-аас бэлэн мөнгө','a1');
+    add(m,25,'transfer',r(250000,450000,10000),null,'a2','ХХБ картын төлбөр','a4');
+    add(m,26,'transfer',r(200000,350000,10000),null,'a3','Голомт картын төлбөр','a5');
+    add(m,28,'income',Math.round(4800000*0.11/12/100)*100,'i3','a6','Хадгаламжийн хүү');
+    add(m,28,'income',Math.round(2500000*0.12/12/100)*100,'i3','a7','Хадгаламжийн хүү');
+    add(m,28,'income',Math.round(1200000*0.10/12/100)*100,'i3','a8','Хадгаламжийн хүү');
+  }
+  const lend=(k,day,type,amount,accId,who)=>{const t=add(shiftM(cm,-k),day,type,amount,type==='expense'?'e15':'i5',accId,'');if(t)t.who=who};
+  lend(2,10,'expense',300000,'a2','Бат');lend(1,12,'income',100000,'a2','Бат');lend(0,3,'income',50000,'a1','Бат');
+  lend(2,18,'expense',200000,'a1','Дорж');lend(1,5,'income',200000,'a2','Дорж');
+  lend(1,22,'expense',150000,'a3','Сараа');lend(0,1,'expense',80000,'a1','Ганаа');
+  s.budgets={e0:700000,e1:220000,e2:90000,e3:330000,e8:200000,e11:120000,e5:250000};
+  const st=shiftM(cm,-2);
+  const rule=(type,amount,catId,accId,note,day,toAccId)=>({id:uid(),type,amount,catId:catId||null,accId,toAccId:toAccId||null,note,day,start:st,done:[]});
+  s.recurring=[rule('income',3200000,'i0','a2','Сарын цалин',5),rule('expense',950000,'e4','a2','Байрны түрээс',3),
+    rule('transfer',300000,null,'a2','Сар бүрийн хуримтлал',6,'a6'),rule('transfer',200000,null,'a3','Аяллын хуримтлал',20,'a7'),
+    rule('transfer',100000,null,'a2','Яаралтай сан',7,'a8'),
+    rule('expense',120000,'e12','a5','Фитнесийн сарын төлбөр',8),rule('expense',45000,'e6','a2','Утас + интернет',31)];
+  applyRecurring(s);
+  const mv=(k,amount)=>({date:shiftM(cm,-k)+'-07',amount});
+  s.goals=[
+    {id:uid(),name:'Машин авах',target:15000000,deadline:shiftM(cm,14),color:'#2B6CB0',moves:[mv(2,3600000),mv(1,300000),mv(0,300000)]},
+    {id:uid(),name:'Солонгос аялал',target:3500000,deadline:shiftM(cm,7),color:'#B83280',moves:[mv(2,500000),mv(1,350000),mv(0,250000)]},
+    {id:uid(),name:'Яаралтай сан (3 сарын зардал)',target:8000000,deadline:'',color:'#2F855A',moves:[mv(2,4800000)]}];
+  return s;
+}
+/* ---------- local database: IndexedDB key-value, localStorage if IDB is unavailable ----------
+   Keys: 'auth' → {token,user:{id,name},key} | null;  'data:<scope>' → S;  'sync:<scope>' → SY.
+   scope = 'local' when signed out, 'u<id>' per account, so several people can share one phone. */
+const store=(()=>{
+  let db=null,dead=!('indexedDB' in window);
+  try{if(localStorage.getItem('togrog.useLS'))dead=true}catch(e){}
+  const open=()=>new Promise((res,rej)=>{const r=indexedDB.open('togrog',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');
+    r.onsuccess=()=>{db=r.result;db.onclose=()=>{db=null};db.onversionchange=()=>{db.close();db=null};res(db)};
+    r.onerror=()=>rej(r.error);r.onblocked=()=>rej(new Error('blocked'))});
+  async function run(mode,fn){
+    for(let i=0;;i++){
+      try{const d=db||await open();return await new Promise((res,rej)=>{const t=d.transaction('kv',mode),rq=fn(t.objectStore('kv'));t.oncomplete=()=>res(rq.result);t.onerror=t.onabort=()=>rej(t.error)})}
+      catch(e){db=null;if(i)throw e}  // iOS sometimes drops the IDB connection while the app is in the background: reopen once
+    }
+  }
+  const ls={get:k=>{try{const v=localStorage.getItem('togrog.'+k);return v?JSON.parse(v):undefined}catch(e){}},
+    set:(k,v)=>{try{localStorage.setItem('togrog.'+k,JSON.stringify(v))}catch(e){}},
+    del:k=>{try{localStorage.removeItem('togrog.'+k)}catch(e){}}};
+  const wrap=(name,mode,fn)=>async(k,v)=>{
+    if(!dead)try{return await run(mode,s=>fn(s,k,v))}catch(e){dead=true;try{localStorage.setItem('togrog.useLS','1')}catch(_){}}
+    return ls[name](k,v)};
+  return {get:wrap('get','readonly',(s,k)=>s.get(k)),set:wrap('set','readwrite',(s,k,v)=>s.put(v,k)),del:wrap('del','readwrite',(s,k)=>s.delete(k))};
+})();
+const emptyState=()=>({v:1,sample:false,accounts:[],categories:[],tx:[],budgets:{},recurring:[],goals:[]});
+const freshSync=()=>({base:{},outbox:{},cursor:0,last:0});
+let auth=(await store.get('auth'))||null;
+const scope=()=>auth?'u'+auth.user.id:'local';
+let S=await store.get('data:'+scope()),SY=(auth&&await store.get('sync:'+scope()))||freshSync();
+if(auth&&!S){S=emptyState();SY={...freshSync(),hold:true}}   // local copy lost (e.g. iOS evicted it): download before tracking anything
+if(!S&&!auth){try{const raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);await store.set('data:local',S);localStorage.removeItem(KEY)}}catch(e){}}  // v1.2 kept everything in localStorage
+if(!S||!Array.isArray(S.tx))S=sample();
+function migrate(){S.budgets=S.budgets||{};S.recurring=S.recurring||[];S.goals=S.goals||[];S.accounts=S.accounts||[];S.categories=S.categories||[];
+  if(!S.loanCats&&S.categories.length){for(const c of LOAN_CATS())if(!S.categories.some(x=>x.id===c.id))S.categories.push(c);S.loanCats=1}}  // v1.3: once, so a deleted loan category stays deleted
+migrate();
+
+/* ---------- sync ----------
+   Every record (account, category, tx, rule, goal, budget, prefs) is a key 'coll/id'. save() diffs S against
+   SY.base (hash per key) and puts changed/deleted keys in SY.outbox with the edit time. sync() pushes the outbox
+   encrypted, pulls everything newer than SY.cursor, and resolves conflicts per record: newest edit wins.
+   iOS has no Background Sync, so sync runs on open, on return to the app, when back online, every minute while
+   visible, a moment after each change, and as a keepalive request when the app is hidden. */
+const API='api/index.php';
+const COLL={acc:'accounts',cat:'categories',tx:'tx',rec:'recurring',goal:'goals'};
+function recs(st){const o={};
+  for(const c in COLL)for(const x of st[COLL[c]]||[])o[c+'/'+x.id]=x;
+  for(const id in st.budgets||{})o['bud/'+id]={v:st.budgets[id]};
+  o['meta/prefs']={sample:!!st.sample,smsSeen:st.smsSeen||[],loanCats:!!st.loanCats};return o}
+const hash=s=>{let h1=0xdeadbeef,h2=0x41c6ce57;for(let i=0;i<s.length;i++){const c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+  h1=Math.imul(h1^h1>>>16,2246822507)^Math.imul(h2^h2>>>13,3266489909);h2=Math.imul(h2^h2>>>16,2246822507)^Math.imul(h1^h1>>>13,3266489909);return(h2>>>0).toString(36)+(h1>>>0).toString(36)};
+function track(){const now=Date.now(),r=recs(S),b=SY.base,ob=SY.outbox;
+  for(const k in r){const h=hash(JSON.stringify(r[k]));if(b[k]!==h){b[k]=h;ob[k]=now}}
+  for(const k in b)if(!(k in r)){delete b[k];ob[k]=now}}
+const pending=()=>Object.keys(SY.outbox).length;
+const bc='BroadcastChannel' in window?new BroadcastChannel('togrog'):null;
+const bcPost=m=>{try{bc&&bc.postMessage(m)}catch(e){}};
+function persist(){const sc=scope();
+  return Promise.all([store.set('data:'+sc,S),auth?store.set('sync:'+sc,SY):0,store.set('auth',auth)]).then(()=>bcPost(sc),()=>{})}
+function save(){if(auth&&!SY.hold)track();persist();if(auth&&pending())syncSoon();syncUI()}
+
+/* End-to-end encryption: PBKDF2(password, username) → 512 bits. First half is the login secret sent to the
+   server; second half is the AES-GCM key that never leaves the device. The server stores only ciphertext. */
+const te=new TextEncoder(),td=new TextDecoder();
+const b64=u=>{let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s)};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function deriveKeys(name,pass){
+  if(!(window.crypto&&crypto.subtle))throw Object.assign(new Error(),{msg:'Аюулгүй холболт (HTTPS) шаардлагатай.'});
+  const base=await crypto.subtle.importKey('raw',te.encode(pass),'PBKDF2',false,['deriveBits']);
+  const bits=new Uint8Array(await crypto.subtle.deriveBits({name:'PBKDF2',salt:te.encode('togrog/v1/'+name),iterations:310000,hash:'SHA-256'},base,512));
+  return {auth:b64(bits.slice(0,32)),key:b64(bits.slice(32))};
+}
+let aesKey=null;
+const getKey=async()=>aesKey||(aesKey=await crypto.subtle.importKey('raw',unb64(auth.key),'AES-GCM',false,['encrypt','decrypt']));
+async function seal(k,d){const iv=crypto.getRandomValues(new Uint8Array(12));
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:te.encode(k)},await getKey(),te.encode(JSON.stringify(d))));
+  const o=new Uint8Array(12+ct.length);o.set(iv);o.set(ct,12);return b64(o)}
+async function open_(k,s){const b=unb64(s);
+  return JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b.slice(0,12),additionalData:te.encode(k)},await getKey(),b.slice(12))))}
+
+async function api(a,body,opt={}){
+  const ctl=new AbortController(),tm=setTimeout(()=>ctl.abort(),opt.timeout||20000);  // iOS navigator.onLine is unreliable: just try, with a timeout
+  try{
+    const r=await fetch(API+'?a='+a,{method:'POST',cache:'no-store',keepalive:!!opt.keepalive,signal:ctl.signal,
+      headers:{'Content-Type':'application/json',...(auth?{'X-Token':auth.token}:{})},body:JSON.stringify(body||{})});
+    let j=null;try{j=await r.json()}catch(_){}
+    if(!r.ok||!j)throw Object.assign(new Error('HTTP '+r.status),{status:r.status,msg:j&&j.error});
+    return j;
+  }finally{clearTimeout(tm)}
+}
+/* Apply pulled records to S. A local edit newer than the server copy wins and stays in the outbox. */
+async function applyRemote(list){
+  const idx={},touched=[];
+  for(const x of list){
+    const ou=SY.outbox[x.k];if(ou&&ou>x.u)continue;
+    let d=null;if(!x.del&&x.d)try{d=await open_(x.k,x.d)}catch(e){continue}  // unreadable record: skip rather than block sync
+    delete SY.outbox[x.k];
+    const i=x.k.indexOf('/'),c=x.k.slice(0,i),id=x.k.slice(i+1);
+    if(c==='bud'){if(d)S.budgets[id]=d.v;else delete S.budgets[id]}
+    else if(c==='meta'){if(id==='prefs'&&d){S.sample=!!d.sample;S.smsSeen=d.smsSeen||[];S.loanCats=!!d.loanCats}}
+    else if(COLL[c]){const arr=S[COLL[c]],m=idx[c]||(idx[c]=new Map(arr.map((o,j)=>[o.id,j])));const j=m.get(id);
+      if(!d){if(j!==undefined){arr.splice(j,1);delete idx[c]}}
+      else{const o={...d,id};if(j!==undefined)arr[j]=o;else{m.set(id,arr.length);arr.push(o)}}}
+    else continue;
+    touched.push(x.k);
+  }
+  if(touched.length){const r=recs(S);for(const k of touched){if(k in r)SY.base[k]=hash(JSON.stringify(r[k]));else delete SY.base[k]}}
+  return touched.length;
+}
+let syncing=null,again=false,syncT=0,syncErr='';
+function syncSoon(ms){clearTimeout(syncT);syncT=setTimeout(sync,ms||1500)}
+async function syncRun(opt){
+  const sc=scope();let changed=0,more=true;
+  for(let g=0;more&&g<100;g++){
+    const r=recs(S),keys=Object.keys(SY.outbox).slice(0,opt.keepalive?40:300);
+    const changes=await Promise.all(keys.map(async k=>k in r?{k,u:SY.outbox[k],d:await seal(k,r[k])}:{k,u:SY.outbox[k],del:1}));
+    const res=await api('sync',{cursor:SY.cursor,changes},opt);
+    if(scope()!==sc)return;  // signed out meanwhile
+    for(const c of changes)if(SY.outbox[c.k]===c.u)delete SY.outbox[c.k];
+    changed+=await applyRemote(res.records||[]);
+    SY.cursor=res.cursor;
+    more=res.more||(!opt.keepalive&&pending()>0);
+  }
+  SY.last=Date.now();
+  if(SY.hold){SY.hold=false;changed++}
+  if(changed){save();render()}else persist();
+}
+function sync(opt){
+  if(!auth||auth.expired)return Promise.resolve(false);
+  if(syncing){again=true;return syncing}
+  syncing=syncRun(opt||{}).then(()=>{syncErr='';return true},e=>{
+      syncErr=e.status===401?'auth':'off';if(e.status===401){auth.expired=true;persist()}return false})
+    .finally(()=>{syncing=null;syncUI();if(again){again=false;syncSoon(300)}});
+  syncUI();return syncing;
+}
+const SYNC_LBL={ok:'Синк хийгдсэн',wait:'Илгээхийг хүлээж байна',busy:'Синк хийж байна…',off:'Офлайн',auth:'Дахин нэвтрэх шаардлагатай'};
+const syncState=()=>!auth?'':auth.expired?'auth':syncing?'busy':syncErr||(pending()?'wait':'ok');
+function syncText(){const s=syncState(),p=pending(),t=SY.last?new Date(SY.last):null;
+  const when=t?(iso(t)===today()?'өнөөдөр ':iso(t)+' ')+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0'):'';
+  if(s==='auth')return 'Нэвтрэлтийн хугацаа дууссан. Өөрчлөлтүүд энэ төхөөрөмж дээр хадгалагдсаар байна.';
+  if(s==='off')return 'Сервертэй холбогдсонгүй'+(p?` · ${p} өөрчлөлт илгээгдэхийг хүлээж байна`:'')+'. Интернэттэй болмогц автоматаар илгээнэ.';
+  if(s==='busy')return SYNC_LBL.busy;
+  return (p?`${p} өөрчлөлт илгээгдэхийг хүлээж байна`:'Бүх өөрчлөлт серверт хадгалагдсан')+(when?' · сүүлд '+when:'');
+}
+function syncUI(){const b=$('#sync');if(!b)return;b.hidden=!auth;
+  const s=syncState();b.dataset.s=s;b.title=SYNC_LBL[s]||'';b.setAttribute('aria-label',b.title);const t=$('#sync-txt');if(t)t.textContent=syncText()}
+
+/* Sign in / register. First sign-in on this device downloads the account; a brand-new account starts with
+   the data already on this device (unless it is the demo data). */
+async function signIn(mode,name,pass){
+  const k=await deriveKeys(name,pass);
+  const res=await api(mode,{name,auth:k.auth});
+  const prev={auth,S,SY,aesKey},a={token:res.token,user:res.user,key:k.key},sc='u'+a.user.id;
+  auth=a;aesKey=null;syncErr='';
+  const st=await store.get('data:'+sc),sy=await store.get('sync:'+sc);
+  if(st&&sy){S=st;SY=sy;migrate();save();bcPost('auth');sync();return 'Нэвтэрлээ'}
+  S=emptyState();SY={...freshSync(),hold:true};
+  if(!await sync()){auth=prev.auth;S=prev.S;SY=prev.SY;aesKey=prev.aesKey;throw Object.assign(new Error(),{msg:'Өгөгдөл татаж чадсангүй. Дахин оролдоно уу.'})}
+  let msg='Нэвтэрлээ, өгөгдөл татагдлаа';
+  if(!Object.keys(SY.base).some(k=>k!=='meta/prefs')){
+    const g=prev.auth?null:prev.S,own=g&&!g.sample&&(g.tx.length||g.goals.length||Object.keys(g.budgets).length||g.accounts.some(x=>x.initial));
+    S=own?JSON.parse(JSON.stringify(g)):defaults();migrate();
+    if(own){store.set('data:local',null);msg='Бүртгэл үүслээ. Энэ төхөөрөмжийн өгөгдөл таны бүртгэлд шилжлээ'}
+    else msg=mode==='register'?'Бүртгэл үүслээ':'Нэвтэрлээ';
+  }
+  save();bcPost('auth');return msg;
+}
+async function signOut(){
+  const sc=scope();api('logout',{}).catch(()=>{});
+  clearTimeout(syncT);auth=null;aesKey=null;syncErr='';
+  await Promise.all([store.del('data:'+sc),store.del('sync:'+sc),store.set('auth',null)]);
+  S=(await store.get('data:local'))||sample();SY=freshSync();migrate();applyRecurring(S);
+  persist();bcPost('auth');render();syncUI();toast('Гарлаа');
+}
+const genOnLoad=auth?0:applyRecurring(S);  // signed in: wait for the first pull so another device's edits come first
+save();
+const goalSaved=g=>(g.moves||[]).reduce((s,m)=>s+m.amount,0);
+
+const cat=id=>S.categories.find(c=>c.id===id)||{name:'Ангилалгүй',color:'#718096',kind:'expense'};
+const acc=id=>S.accounts.find(a=>a.id===id)||{name:'—'};
+function balance(a){let b=+a.initial||0;for(const t of S.tx){
+  if(t.type==='income'&&t.accId===a.id)b+=t.amount;
+  else if(t.type==='expense'&&t.accId===a.id)b-=t.amount;
+  else if(t.type==='transfer'){if(t.accId===a.id)b-=t.amount;if(t.toAccId===a.id)b+=t.amount}}return b}
+const monthTx=m=>S.tx.filter(t=>ym(t.date)===m);
+function totals(m){let inc=0,exp=0;for(const t of monthTx(m)){if(t.type==='income')inc+=t.amount;else if(t.type==='expense')exp+=t.amount}return{inc,exp}}
+function spent(m){const o={};for(const t of monthTx(m))if(t.type==='expense')o[t.catId]=(o[t.catId]||0)+t.amount;return o}
+const sorted=a=>a.slice().sort((x,y)=>y.date.localeCompare(x.date)||(y.ts||0)-(x.ts||0));
+
+/* ---------- ui state ---------- */
+let tab='home',cur=ym(today()),filter='all',q='',draft=null,deferredInstall=null;
+
+function txRow(t){
+  const c=t.type==='transfer'?{name:'Шилжүүлэг',color:'#4A5568'}:cat(t.catId);
+  const lc=t.type!=='transfer'&&t.who?loanCat(t.catId):'',who=lc?(lc==='out'?'→ ':'← ')+t.who:'';
+  const title=t.note||(lc?c.name+' '+who:c.name);
+  const sub=t.type==='transfer'?acc(t.accId).name+' → '+acc(t.toAccId).name:(t.note?c.name+' · '+(who?who+' · ':''):'')+acc(t.accId).name;
+  const amt=t.type==='income'?'<span class="a inc">+'+grp(t.amount)+'₮</span>':t.type==='expense'?'<span class="a exp">−'+grp(t.amount)+'₮</span>':'<span class="a">'+grp(t.amount)+'₮</span>';
+  return `<button class="tx" data-act="tx-edit" data-id="${t.id}"><span class="av" style="background:${c.color}">${t.type==='transfer'?'⇄':esc(c.name[0])}</span><span class="t"><b>${esc(title)}</b><small>${esc(sub)}</small></span>${amt}</button>`;
+}
+function budRow(id,lim,sp){
+  const c=cat(id),p=lim?sp/lim:0,cls=p>1?'over':p>=.8?'warn':'';
+  const st=lim?(p>1?fmt(sp-lim)+' хэтэрсэн':fmt(lim-sp)+' үлдсэн · '+Math.round(p*100)+'%'):'Төсөв тогтоогоогүй';
+  return `<button class="bud-row" data-act="bud-edit" data-id="${id}"><span class="nm"><i class="dot" style="background:${c.color}"></i><span>${esc(c.name)}</span></span><span class="amt num">${grp(sp)}${lim?' / '+grp(lim):''}₮</span>${lim?`<span class="bar ${cls}"><i style="width:${Math.min(100,p*100)}%"></i></span>`:''}<span class="st ${p>1?'over':''}">${st}</span></button>`;
+}
+
+function goalRow(g){
+  const sv=goalSaved(g),p=g.target?sv/g.target:0,left=Math.max(0,g.target-sv);
+  let st;
+  if(sv>=g.target)st='<span class="st inc" style="font-weight:700">Зорилгодоо хүрлээ</span>';
+  else if(g.deadline){const ml=monthsBetween(ym(today()),g.deadline)+1;
+    st=ml>0?`<span class="st">${fmt(left)} дутуу · ${ml} сарын хугацаанд сард <b class="num" style="color:var(--fg)">${fmt(Math.ceil(left/ml/1000)*1000)}</b></span>`:`<span class="st over">Хугацаа дууссан · ${fmt(left)} дутуу</span>`}
+  else st=`<span class="st">${fmt(left)} дутуу · хугацаагүй</span>`;
+  return `<button class="bud-row" data-act="goal-open" data-id="${g.id}"><span class="nm"><i class="dot" style="background:${g.color}"></i><span>${esc(g.name)}</span></span><span class="amt num">${compact(sv)} / ${compact(g.target)}₮ · ${Math.min(100,Math.round(p*100))}%</span><span class="bar ${sv>=g.target?'done':''}"><i style="width:${Math.min(100,p*100)}%;background:${sv>=g.target?'var(--income)':g.color}"></i></span>${st}</button>`;
+}
+const recTitle=r=>r.note||(r.type==='transfer'?'Шилжүүлэг':cat(r.catId).name);
+function upcoming(){
+  const now=today(),cm=ym(now);
+  return S.recurring.filter(r=>!r.done.includes(cm)&&r.start<=cm).map(r=>({r,date:cm+'-'+String(Math.min(r.day,dim(cm))).padStart(2,'0')})).filter(x=>x.date>now).sort((a,b)=>a.date.localeCompare(b.date));
+}
+const loanCat=id=>{const c=S.categories.find(c=>c.id===id);return c&&c.loan||''};
+const daysBetween=(a,b)=>Math.round((new Date(b+'T00:00')-new Date(a+'T00:00'))/864e5);
+/* Money lent per person over all months. since = date of the oldest loan not yet covered by repayments (first in, first out). */
+function loans(){const o={};
+  for(const t of sorted(S.tx).reverse()){const l=t.type!=='transfer'&&t.who?loanCat(t.catId):'';if(!l)continue;
+    const k=t.who.trim().toLowerCase(),p=o[k]||(o[k]={who:t.who.trim(),out:0,back:0,tx:[]});if(l==='out')p.out+=t.amount;else p.back+=t.amount;p.tx.push(t)}
+  return Object.values(o).map(p=>{let paid=p.back,since='';for(const t of p.tx)if(loanCat(t.catId)==='out'){if(paid>=t.amount)paid-=t.amount;else{since=t.date;break}}
+    return {...p,left:p.out-p.back,since}}).sort((a,b)=>b.left-a.left||a.who.localeCompare(b.who))}
+/* In-app notifications, computed from the data on every render. Which ones were seen is kept per device. */
+let seenN=[];try{seenN=JSON.parse(localStorage.getItem('togrog.seenN')||'[]')}catch(e){}
+function notices(){const out=[],now=today(),cm=ym(now),sp=spent(cm);
+  for(const[id,lim]of Object.entries(S.budgets)){if(!(lim>0))continue;const v=sp[id]||0,p=v/lim,c=cat(id);
+    if(p>1)out.push({id:'bud:'+id+':'+cm+':over',lvl:'danger',t:`${c.name}: төсөв хэтэрлээ`,s:`${fmt(v-lim)} хэтэрсэн · ${grp(v)} / ${grp(lim)}₮`,act:'bud-edit',v:id});
+    else if(p>=.8)out.push({id:'bud:'+id+':'+cm+':warn',lvl:'warn',t:`${c.name}: төсвийн ${Math.round(p*100)}% зарцуулсан`,s:`${fmt(lim-v)} үлдсэн`,act:'bud-edit',v:id})}
+  for(const{r,date}of upcoming()){const dd=daysBetween(now,date);
+    if(dd<=3)out.push({id:'rec:'+r.id+':'+date,lvl:'info',t:`${dd===1?'Маргааш':dd+' хоногийн дараа'}: ${recTitle(r)}`,s:`${r.type==='income'?'+':r.type==='expense'?'−':''}${grp(r.amount)}₮ · ${acc(r.accId).name}`,act:'rec-edit',v:r.id})}
+  for(const p of loans()){if(p.left<=0||!p.since)continue;const dd=daysBetween(p.since,now);
+    if(dd>=30)out.push({id:'loan:'+p.who+':'+Math.floor(dd/30),lvl:'warn',t:`${p.who} танд ${fmt(p.left)} өртэй`,s:`${dd} хоногийн өмнө зээлсэн`,act:'loan-open',v:p.who})}
+  for(const g of S.goals){if(!g.deadline||goalSaved(g)>=g.target)continue;const ml=monthsBetween(cm,g.deadline);
+    if(ml>=0&&ml<=1)out.push({id:'goal:'+g.id+':'+cm,lvl:'warn',t:`${g.name}: хугацаа ${ml?'ирэх сард':'энэ сард'} дуусна`,s:`${fmt(g.target-goalSaved(g))} дутуу`,act:'goal-open',v:g.id})}
+  if(auth&&auth.expired)out.push({id:'auth:'+now,lvl:'danger',t:'Дахин нэвтрэх шаардлагатай',s:'Өөрчлөлтүүд серверт илгээгдэхгүй байна',act:'auth',v:'login'});
+  else if(auth&&pending()&&Date.now()-(SY.last||0)>864e5)out.push({id:'sync:'+now,lvl:'warn',t:`${pending()} өөрчлөлт синк хийгдээгүй`,s:'Интернэтэд холбогдоод апп-аа нээнэ үү',act:'sync-now',v:''});
+  if(!auth&&!S.sample&&S.tx.length>=20)out.push({id:'guest:'+cm,lvl:'info',t:'Өгөгдлөө серверт хадгалаарай',s:'Нэвтэрвэл утас солих, апп устгахад ч өгөгдөл алга болохгүй',act:'auth',v:'register'});
+  return out}
+function bellUI(){const n=notices().filter(x=>!seenN.includes(x.id)).length,b=$('#bell-n');if(!b)return;
+  b.hidden=!n;b.textContent=n>9?'9+':n;$('#bell').setAttribute('aria-label','Мэдэгдэл'+(n?` (${n} шинэ)`:''));
+  try{if(navigator.setAppBadge){if(n)navigator.setAppBadge(n).catch(()=>{});else navigator.clearAppBadge().catch(()=>{})}}catch(e){}}  // icon badge: installed PWA (iOS 16.4+ needs notification permission)
+function notifSheet(){
+  const list=notices(),fresh=new Set(list.filter(x=>!seenN.includes(x.id)).map(x=>x.id));
+  seenN=list.map(x=>x.id);try{localStorage.setItem('togrog.seenN',JSON.stringify(seenN))}catch(e){}
+  const col={danger:'var(--danger)',warn:'var(--warn)',info:'var(--accent)'};
+  const askPerm=window.Notification&&Notification.permission==='default'&&'setAppBadge' in navigator&&(navigator.standalone||matchMedia('(display-mode: standalone)').matches);
+  openSheet(`<h3>Мэдэгдэл</h3>${list.length?`<div>${list.map(x=>`<button class="nt ${fresh.has(x.id)?'new':''}" data-act="${x.act}" data-id="${esc(x.v)}" data-v="${esc(x.v)}"><i class="dot" style="background:${col[x.lvl]}"></i><span><b>${esc(x.t)}</b><small>${esc(x.s)}</small></span></button>`).join('')}</div>`:'<div class="empty">Шинэ мэдэгдэл алга</div>'}
+    ${askPerm?'<button class="btn full" data-act="notif-perm" style="margin-top:12px">Апп-ын дүрс дээр тоо харуулах</button>':''}
+    <button class="btn full" data-act="close" style="margin-top:8px">Хаах</button>`);
+  bellUI();
+}
+function loanOpen(who){
+  const p=loans().find(x=>x.who.toLowerCase()===String(who).toLowerCase());if(!p)return closeSheet();
+  openSheet(`<h3>${esc(p.who)}</h3>
+    <div class="trio" style="margin-bottom:12px"><div><small>Өгсөн</small><b class="num exp">${fmt(p.out)}</b></div><div><small>Буцаасан</small><b class="num inc">${fmt(p.back)}</b></div><div><small>Үлдэгдэл</small><b class="num">${fmt(p.left)}</b></div></div>
+    <div class="list">${sorted(p.tx).map(txRow).join('')}</div>
+    <div class="actions" style="margin-top:12px"><button class="btn" data-act="loan-tx" data-v="expense">Дахин зээлдүүлэх</button>${p.left>0?'<button class="btn pri" data-act="loan-tx" data-v="income">Буцаан авсан</button>':''}</div>`);
+  draft={_kind:'loan',who:p.who,left:p.left};
+}
+function loanTx(type,who,amount){
+  newTx();if(!draft)return;const c=S.categories.find(x=>x.kind===type&&x.loan===(type==='expense'?'out':'in'));
+  Object.assign(draft,{type,catId:c?c.id:null,who,amount:amount||0});txSheet();
+}
+/* frequent combos for quick add (last 90 days, recurring excluded) */
+function usage(type){
+  const from=iso(new Date(Date.now()-90*864e5));const combos={},catN={},notes={};
+  for(const t of S.tx){if(t.type!==type||t.date<from)continue;catN[t.catId]=(catN[t.catId]||0)+1;if(t.note)notes[t.note]=(notes[t.note]||0)+1;if(t.recId)continue;
+    const k=t.catId+'|'+t.note+'|'+t.accId;const c=combos[k]||(combos[k]={n:0,catId:t.catId,note:t.note,accId:t.accId,amount:t.amount,date:''});c.n++;if(t.date>=c.date){c.date=t.date;c.amount=t.amount}}
+  return{quick:Object.values(combos).filter(c=>c.n>=2).sort((a,b)=>b.n-a.n).slice(0,6),catN,notes:Object.keys(notes).sort((a,b)=>notes[b]-notes[a]).slice(0,40)};
+}
+
+/* ---------- views ---------- */
+function vHome(){
+  const total=S.accounts.reduce((s,a)=>s+balance(a),0);
+  const{inc,exp}=totals(cur);const net=inc-exp;
+  let proj='';
+  if(cur===ym(today())){const d=Number(today().slice(8)),n=dim(cur);if(d<n&&exp>0)proj=`<p class="note">Энэ хурдаар зарцуулбал сарын эцэст зарлага <b class="num">~${fmt(exp/d*n)}</b> болно. Өдөрт дунджаар <b class="num">${fmt(exp/d)}</b>.</p>`}
+  const sp=spent(cur);
+  const buds=Object.entries(S.budgets).filter(([,v])=>v>0).map(([id,v])=>({id,v,s:sp[id]||0,p:(sp[id]||0)/v})).sort((a,b)=>b.p-a.p).slice(0,3);
+  const recent=sorted(monthTx(cur)).slice(0,6);
+  return `${S.sample?`<div class="banner"><span>Одоо харагдаж байгаа нь <b>жишээ өгөгдөл</b>.</span><button class="btn pri sm" data-act="clear-sample">Цэвэрлээд эхлэх</button></div>`:''}
+  ${!S.tx.length&&!S.sample?`<section class="card"><div class="sec-h"><h2>Эхлэх</h2></div><p class="muted" style="margin:0 0 12px">Одоогоор гүйлгээ алга. Дансныхаа үлдэгдлийг оруулаад гүйлгээгээ нэмж эхэлнэ үү. Эсвэл апп-ыг туршиж үзэхийн тулд 3 сарын жишээ өгөгдөл ачаалж болно, дараа нь <b>Цэвэрлээд эхлэх</b> товчоор устгана.</p><div class="grid2"><button class="btn pri" data-act="load-sample">Жишээ өгөгдөл ачаалах</button><button class="btn" data-act="tx-new">Гүйлгээ нэмэх</button></div></section>`:''}
+  <section class="card hero"><div class="lbl">Нийт үлдэгдэл</div><div class="big num">${fmt(total)}</div>
+    <div class="accs">${S.accounts.map(a=>`<button class="acc" data-act="acc-edit" data-id="${a.id}"><small>${esc(a.name)}</small><b class="num">${fmt(balance(a))}</b></button>`).join('')}</div></section>
+  <section class="card"><div class="sec-h"><h2>${Number(cur.slice(5))}-р сарын дүн</h2></div>
+    <div class="trio"><div><small>Орлого</small><b class="num inc">${fmt(inc)}</b></div><div><small>Зарлага</small><b class="num exp">${fmt(exp)}</b></div><div><small>Цэвэр</small><b class="num">${fmt(net)}</b></div></div>${proj}</section>
+  <section class="card"><div class="sec-h"><h2>Төсөв</h2><a class="link" href="#budget">Бүгд</a></div>
+    ${buds.length?`<div class="bud">${buds.map(b=>budRow(b.id,b.v,b.s)).join('')}</div>`:`<div class="empty">Төсөв тогтоогоогүй байна. <a class="link" href="#budget">Төсөв нэмэх</a></div>`}</section>
+  ${S.goals.length?`<section class="card"><div class="sec-h"><h2>Зорилго</h2><a class="link" href="#budget">Бүгд</a></div><div class="bud">${S.goals.filter(g=>goalSaved(g)<g.target).slice(0,2).concat(S.goals.filter(g=>goalSaved(g)>=g.target)).slice(0,2).map(goalRow).join('')}</div></section>`:''}
+  ${(ln=>ln.length?`<section class="card"><div class="sec-h"><h2>Зээлдүүлсэн</h2><b class="num">${fmt(ln.reduce((a,p)=>a+p.left,0))}</b></div><div class="rows">${ln.map(p=>`<button class="row" data-act="loan-open" data-v="${esc(p.who)}"><span class="l"><span><b>${esc(p.who)}</b><br><small>Өгсөн ${grp(p.out)}₮${p.back?' · буцаасан '+grp(p.back)+'₮':''}${p.since?' · '+daysBetween(p.since,today())+' хоног':''}</small></span></span><b class="num exp">${grp(p.left)}₮</b></button>`).join('')}</div></section>`:'')(loans().filter(p=>p.left>0))}
+  ${cur===ym(today())&&upcoming().length?`<section class="card"><div class="sec-h"><h2>Энэ сард удахгүй</h2><a class="link" href="#prefs">Давталт</a></div><div class="rows">${upcoming().map(({r,date})=>`<button class="row" data-act="rec-edit" data-id="${r.id}"><span class="l"><span><b>${esc(recTitle(r))}</b><br><small>${Number(date.slice(8))}-нд · ${esc(acc(r.accId).name)}</small></span></span><b class="num ${r.type==='income'?'inc':r.type==='expense'?'exp':''}">${r.type==='income'?'+':r.type==='expense'?'−':''}${grp(r.amount)}₮</b></button>`).join('')}</div></section>`:''}
+  <section class="card"><div class="sec-h"><h2>Сүүлийн гүйлгээ</h2><a class="link" href="#txs">Бүгд</a></div>
+    ${recent.length?`<div class="list">${recent.map(txRow).join('')}</div>`:`<div class="empty">Энэ сард гүйлгээ алга. Доод буланд байгаа <b>+</b> товчоор нэмнэ үү.</div>`}</section>`;
+}
+function vTxs(){
+  let list=sorted(monthTx(cur));
+  if(filter!=='all')list=list.filter(t=>t.type===filter);
+  if(q){const s=q.toLowerCase();list=list.filter(t=>(t.note+' '+(t.who||'')+' '+cat(t.catId).name+' '+acc(t.accId).name+' '+t.amount).toLowerCase().includes(s))}
+  const groups={};for(const t of list)(groups[t.date]=groups[t.date]||[]).push(t);
+  const chips=[['all','Бүгд'],['expense','Зарлага'],['income','Орлого'],['transfer','Шилжүүлэг']];
+  return `<button class="btn sms-btn" data-act="sms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>Банкны SMS-ээс оруулах</button>
+  <input class="search" id="f-q" type="search" placeholder="Тайлбар, ангилал, дүнгээр хайх" value="${esc(q)}">
+  <div class="chips">${chips.map(([k,l])=>`<button class="chip" data-act="filter" data-v="${k}" aria-pressed="${filter===k}">${l}</button>`).join('')}</div>
+  <section class="card" style="padding-top:4px">${list.length?Object.keys(groups).map(d=>{
+    const g=groups[d];const net=g.reduce((s,t)=>s+(t.type==='income'?t.amount:t.type==='expense'?-t.amount:0),0);
+    return `<div class="day-h"><span>${dayLabel(d)}</span><span class="num">${net?fmt(net):''}</span></div><div class="list">${g.map(txRow).join('')}</div>`}).join(''):'<div class="empty">Тохирох гүйлгээ олдсонгүй.</div>'}</section>`;
+}
+function vBudget(){
+  const sp=spent(cur);
+  const exCats=S.categories.filter(c=>c.kind==='expense');
+  const withB=exCats.filter(c=>S.budgets[c.id]>0);
+  const without=exCats.filter(c=>!(S.budgets[c.id]>0));
+  const tl=withB.reduce((s,c)=>s+S.budgets[c.id],0),ts=withB.reduce((s,c)=>s+(sp[c.id]||0),0);
+  const p=tl?ts/tl:0;
+  const gs=S.goals.reduce((s,g)=>s+goalSaved(g),0),gt=S.goals.reduce((s,g)=>s+g.target,0);
+  return `<section class="card"><div class="sec-h"><h2>Хуримтлалын зорилго</h2><button class="link" data-act="goal-new">+ Нэмэх</button></div>
+    ${S.goals.length?`<p class="muted" style="margin:-4px 0 12px">Нийт <b class="num" style="color:var(--fg)">${fmt(gs)}</b> / ${fmt(gt)} хуримтлуулсан</p><div class="bud">${S.goals.map(goalRow).join('')}</div>`:'<div class="empty">Машин, аялал, яаралтай сан гэх мэт зорилгоо нэмээд явцаа хянаарай.</div>'}</section>
+  <section class="card"><div class="sec-h"><h2>Нийт төсөв</h2><span class="muted num">${Math.round(p*100)}%</span></div>
+    <div class="trio"><div><small>Төлөвлөсөн</small><b class="num">${fmt(tl)}</b></div><div><small>Зарцуулсан</small><b class="num exp">${fmt(ts)}</b></div><div><small>Үлдсэн</small><b class="num">${fmt(tl-ts)}</b></div></div>
+    <div class="bar ${p>1?'over':p>=.8?'warn':''}" style="margin-top:12px"><i style="width:${Math.min(100,p*100)}%"></i></div>
+    <p class="note">Төсөв нь сар бүр давтагдана. Ангилал дээр дарж дүнг өөрчилнө.</p></section>
+  <section class="card"><div class="sec-h"><h2>Ангиллаар</h2></div>${withB.length?`<div class="bud">${withB.sort((a,b)=>(sp[b.id]||0)/S.budgets[b.id]-(sp[a.id]||0)/S.budgets[a.id]).map(c=>budRow(c.id,S.budgets[c.id],sp[c.id]||0)).join('')}</div>`:'<div class="empty">Доорх ангиллаас сонгож төсөв тогтооно уу.</div>'}</section>
+  <section class="card"><div class="sec-h"><h2>Төсөвгүй ангилал</h2></div><div class="rows">${without.map(c=>`<button class="row" data-act="bud-edit" data-id="${c.id}"><span class="l"><i class="dot" style="background:${c.color}"></i><span>${esc(c.name)}</span></span><small class="num">${sp[c.id]?fmt(sp[c.id]):'+ төсөв'}</small></button>`).join('')}</div></section>`;
+}
+function niceMax(v){const p=Math.pow(10,Math.floor(Math.log10(v)));const n=v/p;return(n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p}
+function vReport(){
+  const sp=spent(cur);const{inc,exp}=totals(cur);
+  const items=Object.entries(sp).map(([id,v])=>({c:cat(id),v})).sort((a,b)=>b.v-a.v);
+  let donut='<div class="empty">Энэ сард зарлага бүртгэгдээгүй.</div>';
+  if(exp>0){
+    const r=54,C=2*Math.PI*r;let off=0,segs='';
+    for(const it of items){const len=it.v/exp*C;segs+=`<circle r="${r}" cx="70" cy="70" fill="none" stroke="${it.c.color}" stroke-width="20" stroke-dasharray="${Math.max(len-1.2,.3)} ${C}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;off+=len}
+    donut=`<div class="donut-wrap"><svg class="donut" viewBox="0 0 140 140" role="img" aria-label="Зарлага ангиллаар"><circle r="${r}" cx="70" cy="70" fill="none" stroke="var(--surface-2)" stroke-width="20"/>${segs}<text class="c1" x="70" y="64" text-anchor="middle">Нийт зарлага</text><text class="c2" x="70" y="82" text-anchor="middle">${compact(exp)}₮</text></svg>
+    <div class="legend">${items.map(it=>`<div><i class="dot" style="background:${it.c.color}"></i><span>${esc(it.c.name)}</span><b class="num">${grp(it.v)}₮</b><em class="num">${Math.round(it.v/exp*100)}%</em></div>`).join('')}</div></div>`;
+  }
+  const ms=[];for(let k=5;k>=0;k--){const m=shiftM(cur,-k);ms.push({m,...totals(m)})}
+  const W=340,H=190,pl=46,pb=22,pt=10,ph=H-pt-pb;
+  const mx=niceMax(Math.max(1,...ms.flatMap(x=>[x.inc,x.exp])));
+  const y=v=>pt+ph*(1-v/mx);const cw=(W-pl-6)/ms.length,bw=Math.min(16,cw/3);
+  let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Сүүлийн 6 сарын орлого, зарлага">`;
+  for(const f of [0,.5,1]){const v=mx*f;svg+=`<line class="g" x1="${pl}" x2="${W-4}" y1="${y(v)}" y2="${y(v)}"/><text class="lb" x="${pl-6}" y="${y(v)+3}" text-anchor="end">${compact(v)}</text>`}
+  ms.forEach((x,i)=>{const cx=pl+i*cw+cw/2;
+    svg+=`<rect class="bi" x="${cx-bw-1}" y="${y(x.inc)}" width="${bw}" height="${Math.max(0,ph+pt-y(x.inc))}" rx="3"><title>Орлого ${fmt(x.inc)}</title></rect>`;
+    svg+=`<rect class="be" x="${cx+1}" y="${y(x.exp)}" width="${bw}" height="${Math.max(0,ph+pt-y(x.exp))}" rx="3"><title>Зарлага ${fmt(x.exp)}</title></rect>`;
+    svg+=`<text class="lb ${x.m===cur?'cur':''}" x="${cx}" y="${H-6}" text-anchor="middle">${Number(x.m.slice(5))}-р сар</text>`});
+  svg+='</svg>';
+  const rate=inc>0?Math.round((inc-exp)/inc*100):null;
+  const avgExp=ms.reduce((s,x)=>s+x.exp,0)/ms.length;
+  return `<section class="card"><div class="sec-h"><h2>Зарлагын бүтэц</h2></div>${donut}</section>
+  <section class="card"><div class="sec-h"><h2>Сүүлийн 6 сар</h2></div>${svg}<div class="keys"><span><i class="dot" style="background:var(--income)"></i>Орлого</span><span><i class="dot" style="background:var(--expense)"></i>Зарлага</span></div></section>
+  <section class="card"><div class="sec-h"><h2>Үзүүлэлт</h2></div><div class="trio">
+    <div><small>Хуримтлалын хувь</small><b class="num ${rate!==null&&rate<0?'exp':'inc'}">${rate===null?'—':rate+'%'}</b></div>
+    <div><small>6 сарын дундаж зарлага</small><b class="num">${fmt(avgExp)}</b></div>
+    <div><small>Гүйлгээний тоо</small><b class="num">${monthTx(cur).length}</b></div></div>
+    <p class="note">Хуримтлалын хувь = (орлого − зарлага) ÷ орлого. 20%-иас дээш байлгахыг зөвлөдөг.</p></section>`;
+}
+function vPrefs(){
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const standalone=navigator.standalone||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches);
+  const exC=S.categories.filter(c=>c.kind==='expense'),inC=S.categories.filter(c=>c.kind==='income');
+  const catList=l=>l.map(c=>`<button class="row" data-act="cat-edit" data-id="${c.id}"><span class="l"><i class="dot" style="background:${c.color}"></i><span>${esc(c.name)}</span></span><small>Засах</small></button>`).join('');
+  const account=!auth?`<section class="card"><div class="sec-h"><h2>Бүртгэл, синк</h2></div>
+    <p class="muted" style="margin:0 0 12px">Нэвтэрвэл өгөгдөл тань серверт нөөцлөгдөж, бусад утас, компьютертэй автоматаар синк хийгдэнэ. Интернэтгүй үед ч ажилласаар, холбогдмогц илгээнэ. Имэйл, утасны дугаар шаардахгүй.</p>
+    <div class="grid2"><button class="btn pri" data-act="auth" data-v="login">Нэвтрэх</button><button class="btn" data-act="auth" data-v="register">Бүртгүүлэх</button></div></section>`
+    :`<section class="card"><div class="sec-h"><h2>Бүртгэл, синк</h2></div>
+    <div class="rows"><div class="row"><span class="l"><span><b>${esc(auth.user.name)}</b><br><small id="sync-txt">${esc(syncText())}</small></span></span></div></div>
+    <p class="note">Өгөгдөл таны нууц үгээр утсан дээрээ шифрлэгдээд илгээгддэг тул сервер ч уншиж чадахгүй.</p>
+    <div class="grid2" style="margin-top:12px">${auth.expired?'<button class="btn pri" data-act="auth" data-v="login">Дахин нэвтрэх</button>':'<button class="btn pri" data-act="sync-now">Одоо синк хийх</button>'}<button class="btn" data-act="logout">Гарах</button></div></section>`;
+  return `${account}<section class="card"><div class="sec-h"><h2>Данс</h2><button class="link" data-act="acc-new">+ Нэмэх</button></div><div class="rows">${S.accounts.map(a=>{const b=bankOf(a);return `<button class="row" data-act="acc-edit" data-id="${a.id}"><span class="l">${b?`<i class="dot" style="background:${b.color}"></i>`:''}<span><b>${esc(a.name)}</b><br><small>${b&&b.name!==a.name?esc(b.name)+' · ':''}${ACC_TYPES[a.type]||''}</small></span></span><b class="num">${fmt(balance(a))}</b></button>`}).join('')}</div></section>
+  <section class="card"><div class="sec-h"><h2>Давтагдах гүйлгээ</h2></div>
+    ${S.recurring.length?`<div class="rows">${S.recurring.slice().sort((a,b)=>a.day-b.day).map(r=>`<button class="row" data-act="rec-edit" data-id="${r.id}"><span class="l"><span><b>${esc(recTitle(r))}</b><br><small>Сар бүрийн ${r.day}-нд · ${r.type==='transfer'?esc(acc(r.accId).name+' → '+acc(r.toAccId).name):esc(acc(r.accId).name)}</small></span></span><b class="num ${r.type==='income'?'inc':r.type==='expense'?'exp':''}">${grp(r.amount)}₮</b></button>`).join('')}</div>`:''}
+    <p class="note" style="${S.recurring.length?'':'border:0;margin:0;padding:0'}">Шинэ гүйлгээ нэмэхдээ <b>Сар бүр давтах</b>-ыг чагтлахад тухайн өдөр нь автоматаар бүртгэгдэнэ.</p></section>
+  <section class="card"><div class="sec-h"><h2>Зарлагын ангилал</h2><button class="link" data-act="cat-new" data-v="expense">+ Нэмэх</button></div><div class="rows">${catList(exC)}</div></section>
+  <section class="card"><div class="sec-h"><h2>Орлогын ангилал</h2><button class="link" data-act="cat-new" data-v="income">+ Нэмэх</button></div><div class="rows">${catList(inC)}</div></section>
+  <section class="card"><div class="sec-h"><h2>Өгөгдөл</h2></div>
+    <p class="muted" style="margin:0 0 12px">${auth?'Мэдээлэл энэ төхөөрөмж дээр хадгалагдаж, серверт синк хийгдэнэ. Нэмэлт хамгаалалт болгож үе үе нөөцлөл татаж болно.':'Бүх мэдээлэл зөвхөн энэ төхөөрөмжийн хөтөч дээр хадгалагдана. Утас солих, хөтчийн өгөгдөл цэвэрлэхээс өмнө нөөцлөл татаж аваарай, эсвэл нэвтэрч серверт хадгална уу.'}</p>
+    <div class="grid2"><button class="btn" data-act="export-json">Нөөцлөл (JSON)</button><button class="btn" data-act="import">Нөөцлөл сэргээх</button><button class="btn" data-act="export-csv">Excel-д (CSV)</button><button class="btn" data-act="copy-json">JSON хуулах</button></div>
+    <div style="margin-top:10px" class="grid2"><button class="btn dng" data-act="reset-sample">Жишээ ачаалах</button><button class="btn dng" data-act="reset-all">Бүгдийг устгах</button></div></section>
+  <section class="card"><div class="sec-h"><h2>Апп болгож суулгах</h2></div>
+    ${standalone?'<p class="muted" style="margin:0">Апп болгож суулгасан байна.</p>':deferredInstall?'<button class="btn pri full" data-act="install">Нүүр дэлгэцэнд суулгах</button>':`<p class="muted" style="margin:0">${isIOS?'Safari дээр <b>Хуваалцах</b> → <b>Нүүр дэлгэцэнд нэмэх</b> гэж дарна. Safari-д нээсэн хуудас удаан ашиглаагүй бол iPhone өгөгдлийг нь устгаж болзошгүй тул заавал суулгана уу. Суулгасан апп Safari-гаас тусдаа санах ойтой тул апп дотроо дахин нэвтэрнэ.':'Chrome цэсний <b>Апп суулгах</b> эсвэл <b>Нүүр дэлгэцэнд нэмэх</b>-ийг сонгоно.'} Суулгасны дараа интернэтгүй үед ажиллана.</p>`}</section>
+  <p class="muted" style="text-align:center">Төгрөг · хувилбар 1.3</p>`;
+}
+function render(){
+  const v={home:vHome,txs:vTxs,budget:vBudget,report:vReport,prefs:vPrefs}[tab]||vHome;
+  $('#view').innerHTML=v();
+  $('#m-label').textContent=mLabel(cur);
+  $('#month').hidden=tab==='prefs';
+  bellUI();
+  document.querySelectorAll('nav.tabs a').forEach(a=>{if(a.dataset.tab===tab)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
+}
+function route(){const h=location.hash.slice(1);tab=['home','txs','budget','report','prefs'].includes(h)?h:'home';render();window.scrollTo(0,0)}
+
+/* ---------- sheets ---------- */
+let lastFocus=null;
+function openSheet(html){lastFocus=document.activeElement;$('#sheet').innerHTML=html;$('#scrim').hidden=false;const f=$('#sheet').querySelector('[autofocus],input,button');if(f)setTimeout(()=>f.focus(),60)}
+function closeSheet(){$('#scrim').hidden=true;$('#sheet').innerHTML='';draft=null;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2200)}
+let confirmFn=null;
+function ask(msg,ok,fn){confirmFn=fn;openSheet(`<h3>${msg}</h3><div class="actions"><button class="btn" data-act="close">Болих</button><button class="btn pri" data-act="confirm-ok" style="background:var(--danger);color:#fff">${ok}</button></div>`)}
+
+function authSheet(mode){
+  const reg=mode==='register';draft={mode};
+  openSheet(`<h3>${reg?'Бүртгүүлэх':'Нэвтрэх'}</h3><form class="form" id="auth-form" novalidate>
+    <label class="f">Нэвтрэх нэр<input class="inp" id="f-user" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="32" value="${esc(auth?auth.user.name:'')}" placeholder="Жишээ нь: bat88" autofocus></label>
+    <label class="f">Нууц үг<input class="inp" id="f-pass" type="password" autocomplete="${reg?'new-password':'current-password'}" placeholder="${reg?'Дор хаяж 8 тэмдэгт':''}"></label>
+    ${reg?'<p class="muted" style="margin:0">Имэйл, утас шаардахгүй. Нууц үгээр таны өгөгдөл шифрлэгддэг тул <b>мартвал серверээс сэргээх боломжгүй</b>. Нууц үгээ найдвартай хадгална уу.</p>':''}
+    <p class="err" id="f-err"></p>
+    <div class="actions"><button type="button" class="btn" data-act="close">Болих</button><button class="btn pri" type="submit" id="f-go">${reg?'Бүртгүүлэх':'Нэвтрэх'}</button></div>
+    <p class="muted" style="text-align:center;margin:0">${reg?'Бүртгэлтэй юу?':'Бүртгэлгүй юу?'} <button type="button" class="link" data-act="auth" data-v="${reg?'login':'register'}">${reg?'Нэвтрэх':'Бүртгүүлэх'}</button></p></form>`);
+}
+function txSheet(){
+  const d=draft,isNew=!S.tx.some(t=>t.id===d.id);
+  const u=usage(d.type);quickList=u.quick;
+  const cats=S.categories.filter(c=>c.kind===d.type).sort((a,b)=>(u.catN[b.id]||0)-(u.catN[a.id]||0));
+  const accOpts=sel=>S.accounts.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.name)}</option>`).join('');
+  const rule=d.recId&&S.recurring.find(r=>r.id===d.recId);
+  openSheet(`<div class="sheet-h"><h3>${isNew?'Шинэ гүйлгээ':'Гүйлгээ засах'}</h3>${isNew?'<button type="button" class="link" data-act="sms">SMS-ээс</button>':''}</div><form class="form" id="tx-form" novalidate>
+    <div class="seg">${['expense','income','transfer'].map(k=>`<button type="button" data-act="tx-type" data-v="${k}" aria-pressed="${d.type===k}">${TYPE_LBL[k]}</button>`).join('')}</div>
+    ${isNew&&d.type!=='transfer'&&u.quick.length?`<div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)">Хурдан нэмэх<div class="quick">${u.quick.map((c,i)=>`<button type="button" class="qk" data-act="tx-quick" data-v="${i}"><i class="dot" style="background:${cat(c.catId).color}"></i><span><b>${esc(c.note||cat(c.catId).name)}</b><small class="num">${grp(c.amount)}₮</small></span></button>`).join('')}</div></div>`:''}
+    <label class="f">Дүн (₮)<input class="inp amt-inp num" id="f-amount" inputmode="numeric" autocomplete="off" placeholder="0" value="${d.amount?grp(d.amount):''}" autofocus></label>
+    ${d.type!=='transfer'?`<div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)">Ангилал<div class="cats">${cats.map(c=>`<button type="button" class="chip" data-act="tx-cat" data-v="${c.id}" aria-pressed="${d.catId===c.id}"><i class="dot" style="background:${c.color}"></i>${esc(c.name)}</button>`).join('')}</div></div>`:''}
+    ${d.type!=='transfer'&&loanCat(d.catId)?`<label class="f">${loanCat(d.catId)==='out'?'Хэнд зээлдүүлсэн':'Хэнээс буцаан авсан'}<input class="inp" id="f-who" maxlength="40" list="dl-who" autocomplete="off" placeholder="Жишээ нь: Бат" value="${esc(d.who||'')}"></label>
+      <datalist id="dl-who">${loans().map(p=>`<option value="${esc(p.who)}"></option>`).join('')}</datalist>`:''}
+    <div class="grid2"><label class="f">${d.type==='transfer'?'Хаанаас':'Данс'}<select class="inp" id="f-acc">${accOpts(d.accId)}</select></label>
+    ${d.type==='transfer'?`<label class="f">Хаашаа<select class="inp" id="f-to">${accOpts(d.toAccId)}</select></label>`:`<label class="f">Огноо<input class="inp" type="date" id="f-date" value="${d.date}"></label>`}</div>
+    ${d.type==='transfer'?`<label class="f">Огноо<input class="inp" type="date" id="f-date" value="${d.date}"></label>`:''}
+    <label class="f">Тайлбар<input class="inp" id="f-note" maxlength="80" list="dl-notes" autocomplete="off" placeholder="Жишээ нь: Номин супермаркет" value="${esc(d.note)}"></label>
+    <datalist id="dl-notes">${u.notes.map(n=>`<option value="${esc(n)}"></option>`).join('')}</datalist>
+    ${isNew?`<label class="check"><input type="checkbox" id="f-rep" ${d.repeat?'checked':''}><span><b>Сар бүр давтах</b><small>Дараагийн саруудад сонгосон өдөр нь автоматаар бүртгэнэ</small></span></label>`
+      :rule?`<div class="check"><span><b>Сар бүрийн ${rule.day}-нд давтагддаг</b><small>Энд засах нь зөвхөн энэ гүйлгээнд хамаарна</small></span><button type="button" class="link" data-act="rec-edit" data-id="${rule.id}">Давталт</button></div>`:''}
+    <p class="err" id="f-err"></p>
+    <div class="actions">${isNew?'<button type="button" class="btn" data-act="close">Болих</button>':'<button type="button" class="btn dng" data-act="tx-del">Устгах</button>'}<button type="submit" class="btn pri">Хадгалах</button></div></form>`);
+}
+function readDraft(){if(!draft)return;const g=id=>{const el=$(id);return el?el.value:null};
+  draft.amount=parseAmt(g('#f-amount'));draft.accId=g('#f-acc')||draft.accId;draft.date=g('#f-date')||draft.date;draft.note=(g('#f-note')||'').trim();if($('#f-to'))draft.toAccId=g('#f-to');if($('#f-rep'))draft.repeat=$('#f-rep').checked;if($('#f-who'))draft.who=$('#f-who').value.trim()}
+let quickList=[];
+function newTx(){
+  const t=today();const date=ym(t)===cur?t:cur+'-01';
+  const last=sorted(S.tx).find(x=>x.type==='expense');
+  draft={id:uid(),type:'expense',amount:0,date,catId:null,accId:(last&&last.accId)||S.accounts[0]?.id,toAccId:S.accounts[1]?.id||S.accounts[0]?.id,note:''};
+  if(!S.accounts.length){toast('Эхлээд данс нэмнэ үү');location.hash='prefs';return}
+  txSheet();
+}
+function saveTx(){
+  readDraft();const d=draft,err=$('#f-err');
+  if(!(d.amount>0))return err.textContent='Дүнгээ оруулна уу.';
+  if(d.type!=='transfer'&&!d.catId)return err.textContent='Ангилал сонгоно уу.';
+  if(d.type==='transfer'&&d.accId===d.toAccId)return err.textContent='Өөр данс руу шилжүүлнэ үү.';
+  if(!d.date)return err.textContent='Огноо сонгоно уу.';
+  const lc=d.type!=='transfer'&&loanCat(d.catId);
+  if(lc&&!d.who)return err.textContent=lc==='out'?'Хэнд зээлдүүлснээ бичнэ үү.':'Хэнээс буцаан авснаа бичнэ үү.';
+  const rec={id:d.id,type:d.type,amount:d.amount,date:d.date,catId:d.type==='transfer'?null:d.catId,accId:d.accId,toAccId:d.type==='transfer'?d.toAccId:null,note:d.note,ts:Date.now()};
+  if(d.recId)rec.recId=d.recId;
+  if(lc)rec.who=d.who;
+  const i=S.tx.findIndex(t=>t.id===d.id);
+  let extra=0;
+  if(i<0&&d.repeat){
+    const r={id:uid(),type:rec.type,amount:rec.amount,catId:rec.catId,accId:rec.accId,toAccId:rec.toAccId,note:rec.note,day:Number(rec.date.slice(8)),start:ym(rec.date),done:[ym(rec.date)]};
+    S.recurring.push(r);rec.recId=r.id;
+  }
+  if(i>=0)S.tx[i]=rec;else S.tx.push(rec);
+  if(i<0&&d.repeat)extra=applyRecurring(S);
+  save();closeSheet();cur=ym(rec.date);render();toast(i>=0?'Хадгаллаа':d.repeat?`Нэмлээ · сар бүрийн ${Number(rec.date.slice(8))}-нд давтагдана${extra?` (өмнөх ${extra} сарыг нөхөж бүртгэв)`:''}`:'Нэмлээ');
+}
+function accSheet(id){
+  const a=id?S.accounts.find(x=>x.id===id):{id:uid(),name:'',type:'bank',bank:'',initial:0};draft={...a,_kind:'acc',_new:!id,_auto:''};
+  openSheet(`<h3>${id?'Данс засах':'Шинэ данс'}</h3><form class="form" id="acc-form" novalidate>
+    <div class="grid2"><label class="f">Төрөл<select class="inp" id="f-type">${Object.entries(ACC_TYPES).map(([k,v])=>`<option value="${k}" ${a.type===k?'selected':''}>${v}</option>`).join('')}</select></label>
+    <label class="f">Банк<select class="inp" id="f-bank"><option value="">—</option>${BANK_LIST.map(b=>`<option value="${b.id}" ${a.bank===b.id?'selected':''}>${esc(b.name)}</option>`).join('')}</select></label></div>
+    <label class="f">Нэр<input class="inp" id="f-name" maxlength="40" value="${esc(a.name)}" placeholder="Жишээ нь: Хаан банк" ${id?'autofocus':''}></label>
+    <label class="f">Эхний үлдэгдэл (₮)<input class="inp num" id="f-init" inputmode="numeric" value="${a.initial?grp(a.initial):''}" placeholder="0"></label>
+    ${id?`<p class="muted" style="margin:0">Одоогийн үлдэгдэл: <b class="num">${fmt(balance(a))}</b></p>`:''}
+    <p class="err" id="f-err"></p>
+    <div class="actions">${id?'<button type="button" class="btn dng" data-act="acc-del">Устгах</button>':'<button type="button" class="btn" data-act="close">Болих</button>'}<button class="btn pri" type="submit">Хадгалах</button></div></form>`);
+}
+function catSheet(id,kind){
+  const c=id?S.categories.find(x=>x.id===id):{id:uid(),name:'',kind,color:COLORS[S.categories.length%COLORS.length]};draft={...c,_kind:'cat',_new:!id};
+  openSheet(`<h3>${id?'Ангилал засах':'Шинэ ангилал'}</h3><form class="form" id="cat-form" novalidate>
+    <label class="f">Нэр<input class="inp" id="f-name" maxlength="30" value="${esc(c.name)}" autofocus></label>
+    <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)">Өнгө<div class="swatches">${COLORS.map(col=>`<button type="button" class="sw" style="background:${col}" data-act="cat-color" data-v="${col}" aria-pressed="${col===c.color}" aria-label="Өнгө ${col}"></button>`).join('')}</div></div>
+    <p class="err" id="f-err"></p>
+    <div class="actions">${id?'<button type="button" class="btn dng" data-act="cat-del">Устгах</button>':'<button type="button" class="btn" data-act="close">Болих</button>'}<button class="btn pri" type="submit">Хадгалах</button></div></form>`);
+}
+function budSheet(id){
+  const c=cat(id),cur_=S.budgets[id]||0;draft={id,_kind:'bud'};
+  openSheet(`<h3>${esc(c.name)} — сарын төсөв</h3><form class="form" id="bud-form" novalidate>
+    <label class="f">Сарын дээд хэмжээ (₮)<input class="inp amt-inp num" id="f-amount" inputmode="numeric" value="${cur_?grp(cur_):''}" placeholder="0" autofocus></label>
+    <p class="muted" style="margin:0">Энэ сард зарцуулсан: <b class="num">${fmt(spent(cur)[id]||0)}</b></p>
+    <div class="actions">${cur_?'<button type="button" class="btn dng" data-act="bud-del">Төсөв хасах</button>':'<button type="button" class="btn" data-act="close">Болих</button>'}<button class="btn pri" type="submit">Хадгалах</button></div></form>`);
+}
+function recSheet(id){
+  const r=S.recurring.find(x=>x.id===id);if(!r)return;draft={id,_kind:'rec'};
+  const accOpts=sel=>S.accounts.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.name)}</option>`).join('');
+  const n=S.tx.filter(t=>t.recId===id).length;
+  openSheet(`<h3>Давтагдах ${TYPE_LBL[r.type].toLowerCase()}</h3><form class="form" id="rec-form" novalidate>
+    <label class="f">Дүн (₮)<input class="inp amt-inp num" id="f-amount" inputmode="numeric" value="${grp(r.amount)}" autofocus></label>
+    <div class="grid2"><label class="f">Сарын хэдэнд<input class="inp num" id="f-day" type="number" min="1" max="31" value="${r.day}"></label>
+    <label class="f">${r.type==='transfer'?'Хаанаас':'Данс'}<select class="inp" id="f-acc">${accOpts(r.accId)}</select></label></div>
+    <label class="f">Тайлбар<input class="inp" id="f-note" maxlength="80" value="${esc(r.note)}"></label>
+    <p class="muted" style="margin:0">${r.type!=='transfer'?esc(cat(r.catId).name)+' · ':''}Одоогоор ${n} удаа бүртгэгдсэн. Өөрчлөлт зөвхөн дараагийн саруудад хамаарна. Сар 31 хоноггүй бол сүүлийн өдөр нь бүртгэнэ.</p>
+    <p class="err" id="f-err"></p>
+    <div class="actions"><button type="button" class="btn dng" data-act="rec-stop">Давталт зогсоох</button><button class="btn pri" type="submit">Хадгалах</button></div></form>`);
+}
+const GOAL_COLORS=['#2B6CB0','#B83280','#2F855A','#6B46C1','#C05621','#0987A0','#B7791F','#C53030'];
+function goalSheet(id){
+  const g=id?S.goals.find(x=>x.id===id):{id:uid(),name:'',target:0,deadline:'',color:GOAL_COLORS[S.goals.length%GOAL_COLORS.length],moves:[]};
+  draft={...g,_kind:'goal',_new:!id};
+  openSheet(`<h3>${id?'Зорилго засах':'Шинэ зорилго'}</h3><form class="form" id="goal-form" novalidate>
+    <label class="f">Нэр<input class="inp" id="f-name" maxlength="40" value="${esc(g.name)}" placeholder="Жишээ нь: Байрны урьдчилгаа" autofocus></label>
+    <label class="f">Зорилтот дүн (₮)<input class="inp amt-inp num" id="f-amount" inputmode="numeric" value="${g.target?grp(g.target):''}" placeholder="0"></label>
+    <div class="grid2"><label class="f">Хэзээ гэхэд (заавал биш)<input class="inp" id="f-deadline" type="month" min="${ym(today())}" value="${g.deadline||''}"></label>
+    ${id?'':'<label class="f">Одоо байгаа хуримтлал (₮)<input class="inp num" id="f-init" inputmode="numeric" placeholder="0"></label>'}</div>
+    <div class="f" style="display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--muted)">Өнгө<div class="swatches">${GOAL_COLORS.map(col=>`<button type="button" class="sw" style="background:${col}" data-act="goal-color" data-v="${col}" aria-pressed="${col===g.color}" aria-label="Өнгө ${col}"></button>`).join('')}</div></div>
+    <p class="err" id="f-err"></p>
+    <div class="actions">${id?'<button type="button" class="btn dng" data-act="goal-del">Устгах</button>':'<button type="button" class="btn" data-act="close">Болих</button>'}<button class="btn pri" type="submit">Хадгалах</button></div></form>`);
+}
+function goalOpen(id){
+  const g=S.goals.find(x=>x.id===id);if(!g)return;draft={id,_kind:'goalmove'};
+  const sv=goalSaved(g);const moves=(g.moves||[]).slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+  openSheet(`<h3>${esc(g.name)}</h3>
+    <div class="bud" style="margin-bottom:14px">${goalRow(g).replace('data-act="goal-open"','tabindex="-1" style="pointer-events:none"')}</div>
+    <form class="form" id="move-form" novalidate>
+      <label class="f">Дүн (₮)<input class="inp amt-inp num" id="f-amount" inputmode="numeric" placeholder="0" autofocus></label>
+      <p class="err" id="f-err"></p>
+      <div class="actions"><button type="button" class="btn" data-act="goal-out">Гаргах</button><button type="submit" class="btn pri">Хуримтлалд нэмэх</button></div>
+    </form>
+    ${moves.length?`<div class="rows" style="margin-top:14px">${moves.map(m=>`<div class="row"><span class="l"><small>${Number(m.date.slice(5,7))}-р сарын ${Number(m.date.slice(8))}</small></span><b class="num ${m.amount<0?'exp':'inc'}">${m.amount<0?'−':'+'}${grp(m.amount)}₮</b></div>`).join('')}</div>`:''}
+    <p class="muted">Энэ нь зөвхөн явцыг тэмдэглэнэ. Мөнгийг хадгаламж руу шилжүүлсэн бол гүйлгээгээр нь бүртгэнэ үү.</p>
+    <div class="actions"><button class="btn" data-act="goal-edit" data-id="${g.id}">Зорилго засах</button><button class="btn" data-act="close">Хаах</button></div>`);
+}
+function goalMove(sign){
+  const v=parseAmt($('#f-amount').value);if(!(v>0))return $('#f-err').textContent='Дүнгээ оруулна уу.';
+  const g=S.goals.find(x=>x.id===draft.id);if(!g)return;
+  if(sign<0&&v>goalSaved(g))return $('#f-err').textContent='Хуримтлалаас их дүн гаргах боломжгүй.';
+  const was=goalSaved(g)>=g.target;
+  g.moves=g.moves||[];g.moves.push({date:today(),amount:sign*v});save();
+  const now=goalSaved(g)>=g.target;
+  closeSheet();render();toast(!was&&now?'Баяр хүргэе! Зорилгодоо хүрлээ':sign>0?fmt(v)+' нэмлээ':fmt(v)+' гаргалаа');
+}
+
+/* ---------- bank SMS import ---------- */
+const CAT_HINTS=[[/шатахуун|бензин|petro|shunkhlai|шунхлай|sod mongol|сод монгол|magnai|магнай|ai-?9[25]|аи-?9[25]|петровис|petrovis/i,'e3'],
+  [/номин|nomin|e-?mart|и-?март|сансар|sansar|хүнс|hvns|khuns|supermarket|супермаркет|gs25|cu |circle ?k|мах|сүү/i,'e0'],
+  [/кофе|coffee|cafe|кафе|restaurant|ресторан|pizza|пицца|kfc|tom ?n ?toms|caffe bene|burger|бургер|хоол/i,'e1'],
+  [/такси|taxi|ubcab|юбикаб|bus|автобус|u-?money|smart ?card/i,'e2'],
+  [/unitel|юнител|mobicom|мобиком|skytel|скайтел|g-?mobile|жи-?мобайл|univision|юнивишн|интернет|internet/i,'e6'],
+  [/эмийн сан|pharmacy|эмнэлэг|hospital|clinic|клиник|шүд/i,'e7'],
+  [/цалин|tsalin|salary|урьдчилгаа цалин/i,'i0']];
+const hashStr=s=>{let h=5381;for(const ch of s.replace(/\s+/g,' ').trim().toLowerCase())h=(h*33^ch.charCodeAt(0))>>>0;return h.toString(36)};
+function smsOne(raw){
+  const t=raw.replace(/\s+/g,' ').trim(),low=t.toLowerCase();
+  const re=/([+\-−]?)\s?(\d{1,3}(?:[ ,'’]\d{3})+|\d{3,})(?:[.,]\d{1,2})?\s?(mnt|₮|төг|tug|tgr|төгрөг)?/gi;
+  let m,amount=0,sign='';
+  while((m=re.exec(t))){
+    const before=low.slice(Math.max(0,m.index-22),m.index);
+    if(/үлд|uld|balance|bal[.:]|бал\./.test(before))continue;
+    const hasCur=!!m[3],hasKey=/дүн|dun|amount|орлого|orlogo|зарлага|zarlaga|гүйлгээ|guilgee|[+\-−]\s?$/.test(before)||m[1];
+    if(!hasCur&&!hasKey)continue;
+    const n=Number(m[2].replace(/[^\d]/g,''));if(n<=0)continue;
+    if(/^(19|20)\d{2}$/.test(m[2])&&!hasCur)continue;
+    amount=n;sign=m[1];break;
+  }
+  if(!amount)return{raw,error:true};
+  let type='expense';
+  if(sign==='+'||/орлого|orlogo|орсон|orson|credit|хүлээн ав|huleen av|орж ирсэн|nemegdsen|нэмэгдсэн|цалин|tsalin/.test(low))type='income';
+  if(sign==='-'||sign==='−'||/зарлага|zarlaga|гарсан|garsan|debit|хасагд|hasagd|худалдан ав|purchase|pos |төлбөр төлсөн|tulbur/.test(low))type='expense';
+  let date=today();
+  let d=t.match(/(20\d{2})[.\/\-](\d{1,2})[.\/\-](\d{1,2})/);
+  if(d)date=d[1]+'-'+d[2].padStart(2,'0')+'-'+d[3].padStart(2,'0');
+  else if((d=t.match(/\b(\d{1,2})[.\/\-](\d{1,2})[.\/\-](20\d{2})\b/)))date=d[3]+'-'+d[2].padStart(2,'0')+'-'+d[1].padStart(2,'0');
+  else if((d=t.match(/\b(\d{2})[.\/](\d{1,2})[.\/](\d{1,2})\b/)))date='20'+d[1]+'-'+d[2].padStart(2,'0')+'-'+d[3].padStart(2,'0');
+  if(!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(date)||date>today())date=today();
+  let note='';
+  const nm=t.match(/(?:гүйлгээний утга|guilgeenii utga|утга|utga|тайлбар|tailbar|description|desc|merchant|байршил|at)\s*[:\-]\s*(.+?)(?=\s*(?:[;|]|үлдэгдэл|uldegdel|balance|огноо|ognoo|$))/i);
+  if(nm)note=nm[1].replace(/[.,]+$/,'').trim().slice(0,60);
+  if(!note){const pm=t.match(/\b(?:pos|худалдан авалт|purchase)\s*[:\-]?\s*([A-Za-zА-Яа-яӨөҮүЁё&' .\-]{3,40}?)(?=\s+\d|\s+(?:bal|үлд|uld)|[.;]|$)/i);if(pm)note=pm[1].trim()}
+  let accId='';
+  const bank=BANK_LIST.find(b=>b.rx.test(low));
+  if(bank){const a=S.accounts.find(a=>a.bank===bank.id)||S.accounts.find(a=>a.name.toLowerCase().includes(bank.key));if(a)accId=a.id}
+  if(!accId){const a=S.accounts.find(a=>a.type==='bank')||S.accounts[0];accId=a&&a.id}
+  let catId=null;const hay=(note+' '+low);
+  if(note){const past=sorted(S.tx).find(x=>x.type===type&&x.note&&x.catId&&(x.note.toLowerCase().includes(note.toLowerCase())||note.toLowerCase().includes(x.note.toLowerCase())));if(past)catId=past.catId}
+  if(!catId)for(const[rx,cid]of CAT_HINTS){const c=S.categories.find(c=>c.id===cid);if(c&&c.kind===type&&rx.test(hay)){catId=cid;break}}
+  if(!catId){const fb=S.categories.filter(c=>c.kind===type);catId=(fb.find(c=>/бусад/i.test(c.name))||fb[0]||{}).id||null}
+  const h=hashStr(t);
+  const dup=(S.smsSeen||[]).includes(h)||S.tx.some(x=>x.type===type&&x.amount===amount&&x.date===date);
+  return{raw,amount,type,date,note,accId,catId,h,dup};
+}
+function smsSplit(text){
+  let parts=text.split(/\n\s*\n/).map(s=>s.trim()).filter(Boolean);
+  if(parts.length===1){const lines=parts[0].split(/\n/).map(s=>s.trim()).filter(Boolean);
+    if(lines.length>1&&lines.every(l=>/\d{3}/.test(l)&&/(mnt|₮|төг|дүн|dun)/i.test(l)))parts=lines}
+  return parts;
+}
+let smsItems=[];
+function smsSheet(text){
+  draft={_kind:'sms'};smsItems=[];
+  openSheet(`<h3>Банкны SMS-ээс оруулах</h3><form class="form" id="sms-form" novalidate>
+    <label class="f">SMS-ийн текст<textarea class="inp sms-ta" id="f-sms" placeholder="Банкны мессежийг хуулж энд буулгана. Олон мессеж бол хооронд нь хоосон мөр үлдээнэ." autofocus>${esc(text||'')}</textarea></label>
+    <p class="muted" style="margin:0">Мессежээс дүн, огноо, гүйлгээний утгыг таниад ангиллыг таамаглана. Нэмэхээс өмнө шалгаж засах боломжтой.</p>
+    <p class="err" id="f-err"></p>
+    <div class="actions"><button type="button" class="btn" data-act="sms-paste">Санах ойгоос буулгах</button><button type="submit" class="btn pri">Таниулах</button></div></form>`);
+  if(text)setTimeout(smsParse,50);
+}
+function smsParse(){
+  const text=$('#f-sms').value;const parts=smsSplit(text);
+  if(!parts.length)return $('#f-err').textContent='Мессежээ буулгана уу.';
+  const res=parts.map(smsOne);smsItems=res.filter(r=>!r.error);const bad=res.filter(r=>r.error);
+  if(!smsItems.length)return $('#f-err').textContent='Дүн олдсонгүй. Мессежид "MNT" эсвэл "₮" гэсэн дүн байгаа эсэхийг шалгана уу.';
+  const accOpts=sel=>S.accounts.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.name)}</option>`).join('');
+  const catOpts=(type,sel)=>S.categories.filter(c=>c.kind===type).map(c=>`<option value="${c.id}" ${c.id===sel?'selected':''}>${esc(c.name)}</option>`).join('');
+  openSheet(`<h3>${smsItems.length} гүйлгээ танигдлаа</h3><form class="form" id="smsok-form" novalidate>
+    ${smsItems.map((it,i)=>`<div class="sms-it ${it.dup?'dup':''}">
+      <label class="sms-top"><input type="checkbox" id="s-on-${i}" ${it.dup?'':'checked'}><span class="sms-amt num ${it.type==='income'?'inc':'exp'}" id="s-lbl-${i}">${it.type==='income'?'+':'−'}${grp(it.amount)}₮</span>${it.dup?'<em>Давхардсан байж магадгүй</em>':''}</label>
+      <div class="grid2"><label class="f">Төрөл<select class="inp" id="s-type-${i}" data-sms-type="${i}"><option value="expense" ${it.type==='expense'?'selected':''}>Зарлага</option><option value="income" ${it.type==='income'?'selected':''}>Орлого</option></select></label>
+      <label class="f">Огноо<input class="inp" type="date" id="s-date-${i}" value="${it.date}"></label>
+      <label class="f">Ангилал<select class="inp" id="s-cat-${i}">${catOpts(it.type,it.catId)}</select></label>
+      <label class="f">Данс<select class="inp" id="s-acc-${i}">${accOpts(it.accId)}</select></label></div>
+      <label class="f">Тайлбар<input class="inp" id="s-note-${i}" maxlength="80" value="${esc(it.note)}" placeholder="Гүйлгээний утга"></label>
+      <details><summary>Эх мессеж</summary><p>${esc(it.raw)}</p></details></div>`).join('')}
+    ${bad.length?`<p class="muted" style="margin:0"><b>${bad.length}</b> мессежээс дүн олдсонгүй тул алгаслаа.</p>`:''}
+    <p class="err" id="f-err"></p>
+    <div class="actions"><button type="button" class="btn" data-act="sms-back">Буцах</button><button type="submit" class="btn pri">Сонгосныг нэмэх</button></div></form>`);
+}
+function smsCommit(){
+  let n=0;const seen=S.smsSeen||(S.smsSeen=[]);let lastDate='';
+  smsItems.forEach((it,i)=>{
+    if(!$('#s-on-'+i).checked)return;
+    const type=$('#s-type-'+i).value,date=$('#s-date-'+i).value||today();
+    S.tx.push({id:uid(),type,amount:it.amount,date,catId:$('#s-cat-'+i).value||null,accId:$('#s-acc-'+i).value,toAccId:null,note:$('#s-note-'+i).value.trim(),src:'sms',ts:Date.now()+i});
+    if(!seen.includes(it.h))seen.push(it.h);n++;lastDate=date;
+  });
+  if(!n)return $('#f-err').textContent='Нэмэх гүйлгээгээ сонгоно уу.';
+  if(seen.length>500)seen.splice(0,seen.length-500);
+  save();closeSheet();if(lastDate)cur=ym(lastDate);render();toast(n+' гүйлгээ нэмлээ');
+}
+
+/* ---------- import / export ---------- */
+function download(name,text,type){
+  try{const b=new Blob([text],{type});const u=URL.createObjectURL(b);const a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);toast('Файл татаж байна')}catch(e){toast('Татаж чадсангүй — JSON хуулах товчийг ашиглана уу')}
+}
+function csv(){
+  const q_=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[['Огноо','Төрөл','Дүн','Ангилал','Данс','Хүлээн авах данс','Тайлбар','Хэнд/Хэнээс']];
+  for(const t of sorted(S.tx).reverse())rows.push([t.date,TYPE_LBL[t.type],t.type==='expense'?-t.amount:t.amount,t.type==='transfer'?'':cat(t.catId).name,acc(t.accId).name,t.toAccId?acc(t.toAccId).name:'',t.note,t.who||'']);
+  return '﻿'+rows.map(r=>r.map(q_).join(',')).join('\r\n');
+}
+function importData(text){
+  let d;try{d=JSON.parse(text)}catch(e){return toast('Файл уншигдсангүй: JSON биш байна')}
+  if(!d||!Array.isArray(d.tx)||!Array.isArray(d.accounts)||!Array.isArray(d.categories))return toast('Төгрөгийн нөөцлөлийн файл биш байна');
+  ask(`${d.tx.length} гүйлгээтэй нөөцлөлөөр одоогийн өгөгдлийг солих уу?`,'Солих',()=>{S=d;migrate();applyRecurring(S);save();render();toast('Сэргээлээ')});
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const act=el.dataset.act,id=el.dataset.id,v=el.dataset.v;
+  switch(act){
+    case 'm-prev':cur=shiftM(cur,-1);render();break;
+    case 'm-next':cur=shiftM(cur,1);render();break;
+    case 'tx-new':newTx();break;
+    case 'tx-edit':draft={...S.tx.find(t=>t.id===id)};if(draft.id)txSheet();break;
+    case 'tx-type':readDraft();if(draft.type!==v){draft.type=v;draft.catId=null}txSheet();break;
+    case 'tx-cat':readDraft();draft.catId=v;txSheet();break;
+    case 'tx-quick':{readDraft();const c=quickList[+v];if(c){draft.catId=c.catId;draft.note=c.note;draft.accId=c.accId;draft.amount=c.amount}txSheet();
+      setTimeout(()=>{const a=$('#f-amount');if(a){a.focus();a.select()}},70);break}
+    case 'rec-edit':recSheet(id);break;
+    case 'sms':smsSheet('');break;
+    case 'sms-back':{const txt=smsItems.map(x=>x.raw).join('\n\n');smsSheet('');$('#f-sms').value=txt;break}
+    case 'sms-paste':if(navigator.clipboard&&navigator.clipboard.readText)navigator.clipboard.readText().then(t=>{$('#f-sms').value=t;if(t.trim())smsParse()},()=>{$('#f-err').textContent='Санах ойг уншиж чадсангүй. Талбарт удаан дараад "Буулгах"-ыг сонгоно уу.'});else $('#f-err').textContent='Талбарт удаан дараад "Буулгах"-ыг сонгоно уу.';break;
+    case 'rec-stop':{const rid=draft.id;ask('Давталтыг зогсоох уу? Өмнө бүртгэгдсэн гүйлгээнүүд хэвээр үлдэнэ.','Зогсоох',()=>{S.recurring=S.recurring.filter(r=>r.id!==rid);S.tx.forEach(t=>{if(t.recId===rid)delete t.recId});save();render();toast('Давталт зогслоо')});break}
+    case 'goal-new':goalSheet(null);break;
+    case 'goal-open':goalOpen(id);break;
+    case 'goal-edit':goalSheet(id);break;
+    case 'goal-color':draft.color=v;document.querySelectorAll('.sw').forEach(s=>s.setAttribute('aria-pressed',s.dataset.v===v));break;
+    case 'goal-out':goalMove(-1);break;
+    case 'goal-del':{const gid=draft.id;ask('Энэ зорилгыг устгах уу?','Устгах',()=>{S.goals=S.goals.filter(g=>g.id!==gid);save();render()});break}
+    case 'tx-del':{const did=draft.id;ask('Энэ гүйлгээг устгах уу?','Устгах',()=>{S.tx=S.tx.filter(t=>t.id!==did);save();render();toast('Устгалаа')});break}
+    case 'filter':filter=v;render();break;
+    case 'bud-edit':budSheet(id);break;
+    case 'bud-del':delete S.budgets[draft.id];save();closeSheet();render();break;
+    case 'acc-edit':accSheet(id);break;
+    case 'acc-new':accSheet(null);break;
+    case 'acc-del':{const aid=draft.id;if(S.tx.some(t=>t.accId===aid||t.toAccId===aid)){$('#f-err').textContent='Энэ дансанд гүйлгээ бүртгэлтэй тул устгах боломжгүй.';break}
+      ask('Дансыг устгах уу?','Устгах',()=>{S.accounts=S.accounts.filter(a=>a.id!==aid);save();render()});break}
+    case 'cat-edit':catSheet(id);break;
+    case 'cat-new':catSheet(null,v);break;
+    case 'cat-color':draft.name=$('#f-name').value;draft.color=v;document.querySelectorAll('.sw').forEach(s=>s.setAttribute('aria-pressed',s.dataset.v===v));break;
+    case 'cat-del':{const cid=draft.id,used=S.tx.filter(t=>t.catId===cid).length;
+      ask(used?`Энэ ангилалд ${used} гүйлгээ бий. Устгавал тэдгээр нь "Ангилалгүй" болно.`:'Ангиллыг устгах уу?','Устгах',()=>{S.categories=S.categories.filter(c=>c.id!==cid);delete S.budgets[cid];save();render()});break}
+    case 'confirm-ok':{const f=confirmFn;confirmFn=null;closeSheet();f&&f();break}
+    case 'close':closeSheet();break;
+    case 'clear-sample':ask('Жишээ гүйлгээ, төсөв, давталт, зорилгыг устгаад хоосноос эхлэх үү? Данс, ангилал хэвээр үлдэнэ.','Цэвэрлэх',()=>{S.tx=[];S.budgets={};S.recurring=[];S.goals=[];S.accounts.forEach(a=>a.initial=0);S.sample=false;save();render();toast('Бэлэн боллоо. Дансны эхний үлдэгдлээ оруулна уу.')});break;
+    case 'load-sample':{const go=()=>{S=sample();save();render();toast('Жишээ өгөгдөл ачааллаа')};
+      if(S.goals.length||Object.keys(S.budgets).length||S.accounts.some(a=>a.initial))ask('Таны данс, төсөв, зорилгыг жишээ өгөгдлөөр солих уу?','Солих',go);else go();break}
+    case 'reset-sample':ask('Одоогийн бүх өгөгдлийг жишээ өгөгдлөөр солих уу?','Солих',()=>{S=sample();save();render()});break;
+    case 'reset-all':ask('Бүх данс, гүйлгээ, төсөв, зорилгыг бүрмөсөн устгах уу?'+(auth?' Бүх төхөөрөмж болон серверээс устна.':'')+' Буцаах боломжгүй.','Бүгдийг устгах',()=>{S=defaults();save();render();toast('Устгалаа')});break;
+    case 'export-json':download('togrog-'+today()+'.json',JSON.stringify(S,null,1),'application/json');break;
+    case 'export-csv':download('togrog-'+today()+'.csv',csv(),'text/csv;charset=utf-8');break;
+    case 'copy-json':{const txt=JSON.stringify(S);
+      if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>toast('JSON хууллаа'),()=>showJson(txt));else showJson(txt);break}
+    case 'import':$('#f-import').click();break;
+    case 'auth':authSheet(v);break;
+    case 'notif':notifSheet();break;
+    case 'notif-perm':Notification.requestPermission().then(()=>{bellUI();closeSheet()},()=>{});break;
+    case 'loan-open':loanOpen(v);break;
+    case 'loan-tx':{const w=draft.who,l=draft.left;closeSheet();loanTx(v,w,v==='income'?l:0);break}
+    case 'sync-now':if(!auth){location.hash='#prefs';break}if(auth.expired){authSheet('login');break}
+      sync().then(ok=>toast(ok?'Синк хийгдлээ':'Сервертэй холбогдож чадсангүй'));break;
+    case 'logout':sync().finally(()=>{const n=pending();
+      ask(n?`${n} өөрчлөлт серверт хүрээгүй байна. Гарвал эдгээр нь устна. Гарах уу?`:'Гарах уу? Таны өгөгдөл серверт хадгалагдсан тул дахин нэвтрэхэд буцаж татагдана.','Гарах',signOut)});break;
+    case 'install':if(deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.finally(()=>{deferredInstall=null;render()})}break;
+  }
+});
+function showJson(txt){openSheet(`<h3>Нөөцлөл (JSON)</h3><textarea class="inp" id="f-json" readonly>${esc(txt)}</textarea><p class="muted">Текстийг сонгоод хуулна уу.</p><button class="btn full" data-act="close">Хаах</button>`);setTimeout(()=>{const t=$('#f-json');t.focus();t.select()},80)}
+document.addEventListener('submit',e=>{
+  e.preventDefault();const f=e.target.id;
+  if(f==='tx-form')return saveTx();
+  if(f==='auth-form'){const name=$('#f-user').value.trim().normalize('NFC').toLowerCase(),pw=$('#f-pass').value,reg=draft.mode==='register',err=$('#f-err'),go=$('#f-go');
+    if(!/^[\p{L}\p{N}_.\-]{3,32}$/u.test(name))return err.textContent='Нэр 3–32 тэмдэгт байна: үсэг, тоо, . _ -';
+    if(reg?pw.length<8:!pw)return err.textContent=reg?'Нууц үг дор хаяж 8 тэмдэгт байна.':'Нууц үгээ оруулна уу.';
+    go.disabled=true;go.textContent='Түр хүлээнэ үү…';
+    signIn(draft.mode,name,pw).then(msg=>{closeSheet();render();syncUI();toast(msg)},e=>{render();
+      if(!$('#f-go'))return toast(e.msg||'Алдаа гарлаа');
+      go.disabled=false;go.textContent=reg?'Бүртгүүлэх':'Нэвтрэх';err.textContent=e.msg||'Сервертэй холбогдож чадсангүй. Интернэтээ шалгана уу.'});return}
+  if(f==='acc-form'){const n=$('#f-name').value.trim();if(!n)return $('#f-err').textContent='Нэр оруулна уу.';
+    const a={id:draft.id,name:n,type:$('#f-type').value,initial:parseAmt($('#f-init').value)};const bk=$('#f-bank').value;if(bk)a.bank=bk;
+    const i=S.accounts.findIndex(x=>x.id===a.id);if(i>=0)S.accounts[i]=a;else S.accounts.push(a);save();closeSheet();render();return}
+  if(f==='cat-form'){const n=$('#f-name').value.trim();if(!n)return $('#f-err').textContent='Нэр оруулна уу.';
+    const c={id:draft.id,name:n,kind:draft.kind,color:draft.color};const i=S.categories.findIndex(x=>x.id===c.id);if(i>=0)S.categories[i]=c;else S.categories.push(c);save();closeSheet();render();return}
+  if(f==='rec-form'){const r=S.recurring.find(x=>x.id===draft.id);const v=parseAmt($('#f-amount').value),day=Math.round(+$('#f-day').value);
+    if(!(v>0))return $('#f-err').textContent='Дүнгээ оруулна уу.';if(!(day>=1&&day<=31))return $('#f-err').textContent='Өдрийг 1–31 хооронд оруулна уу.';
+    if(r){r.amount=v;r.day=day;r.accId=$('#f-acc').value;r.note=$('#f-note').value.trim();applyRecurring(S)}save();closeSheet();render();toast('Давталт хадгаллаа');return}
+  if(f==='goal-form'){const n=$('#f-name').value.trim(),t=parseAmt($('#f-amount').value);
+    if(!n)return $('#f-err').textContent='Нэр оруулна уу.';if(!(t>0))return $('#f-err').textContent='Зорилтот дүнгээ оруулна уу.';
+    const g={id:draft.id,name:n,target:t,deadline:$('#f-deadline').value||'',color:draft.color,moves:draft.moves||[]};
+    const init=$('#f-init')?parseAmt($('#f-init').value):0;if(init>0)g.moves.push({date:today(),amount:init});
+    const i=S.goals.findIndex(x=>x.id===g.id);if(i>=0)S.goals[i]=g;else S.goals.push(g);save();closeSheet();render();toast('Зорилго хадгаллаа');return}
+  if(f==='move-form')return goalMove(1);
+  if(f==='sms-form')return smsParse();
+  if(f==='smsok-form')return smsCommit();
+  if(f==='bud-form'){const v=parseAmt($('#f-amount').value);if(v>0)S.budgets[draft.id]=v;else delete S.budgets[draft.id];save();closeSheet();render();toast('Төсөв хадгаллаа')}
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='f-amount'||t.id==='f-init'){const n=parseAmt(t.value);t.value=n?grp(n):''}
+  if(t.id==='f-q'){q=t.value;const pos=t.selectionStart;render();const n=$('#f-q');n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}
+});
+$('#scrim').addEventListener('click',e=>{if(e.target.id==='scrim')closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#scrim').hidden)closeSheet()});
+$('#f-import').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>importData(r.result);r.readAsText(f);e.target.value=''});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredInstall=e;if(tab==='prefs')render()});
+window.addEventListener('hashchange',route);
+document.addEventListener('change',e=>{  // account sheet: picking a bank fills the name until the user types their own
+  if(e.target.id!=='f-bank'&&e.target.id!=='f-type')return;
+  const tp=$('#f-type'),bk=$('#f-bank'),nm=$('#f-name');if(!bk||!nm)return;
+  if(e.target.id==='f-bank'&&bk.value&&tp.value==='cash')tp.value='bank';
+  const b=BANK_LIST.find(x=>x.id===bk.value);
+  if(b&&(!nm.value.trim()||nm.value===draft._auto)){nm.value=draft._auto=bankAccName(b,tp.value)}});
+document.addEventListener('change',e=>{const i=e.target.dataset&&e.target.dataset.smsType;if(i===undefined)return;const type=e.target.value,it=smsItems[+i];
+  const sel=$('#s-cat-'+i);const opts=S.categories.filter(c=>c.kind===type);sel.innerHTML=opts.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  const lbl=$('#s-lbl-'+i);lbl.className='sms-amt num '+(type==='income'?'inc':'exp');lbl.textContent=(type==='income'?'+':'−')+grp(it.amount)+'₮'});
+let swReg=null;
+function catchUp(){if(!$('#scrim').hidden)return;const n=applyRecurring(S);if(n){save();render();toast(n+' давтагдах гүйлгээ бүртгэгдлээ')}}
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){sync().finally(catchUp);if(swReg)swReg.update().catch(()=>{})}
+  else if(auth&&pending())sync({keepalive:true});  // iOS may freeze the app any moment after this
+});
+window.addEventListener('pagehide',()=>{if(auth&&pending()&&!syncing)sync({keepalive:true})});
+window.addEventListener('online',()=>sync());
+setInterval(()=>{if(document.visibilityState==='visible')sync()},60000);
+if(bc)bc.onmessage=async e=>{  // another tab changed data or signed in/out
+  if(e.data==='auth')return location.reload();
+  if(e.data!==scope())return;
+  const s=await store.get('data:'+scope());if(s){S=s;migrate()}
+  if(auth){const y=await store.get('sync:'+scope());if(y)SY=y}
+  render();syncUI()};
+route();
+try{const sp=new URLSearchParams(location.search);const shared=[sp.get('title'),sp.get('text')].filter(Boolean).join('\n');
+  if(shared){history.replaceState(null,'',location.pathname+'#txs');tab='txs';render();smsSheet(shared)}}catch(_){}
+if(genOnLoad&&!S.sample)toast(genOnLoad+' давтагдах гүйлгээ бүртгэгдлээ');
+syncUI();
+if(auth)sync().finally(catchUp);
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});  // ask the browser not to evict our data
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol)){navigator.serviceWorker.register('sw.js').then(r=>{swReg=r},()=>{})}
+})();
+</script>
+
+</body>
+</html>
