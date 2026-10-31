@@ -180,6 +180,20 @@ label.f{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:70
 .sms-it details p{margin:6px 0 0;overflow-wrap:anywhere}
 .sms-it summary{cursor:pointer;font-weight:700}
 textarea.inp{min-height:120px;font-family:var(--f-body);font-size:12px;font-weight:400}
+#lockscreen{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:max(40px,env(safe-area-inset-top,16px)) 24px max(40px,env(safe-area-inset-bottom,16px))}
+.lk-brand{font-family:var(--f-display);font-weight:700;font-size:22px;display:flex;align-items:center;gap:10px}
+.lk-brand i{width:40px;height:40px;border-radius:12px;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-style:normal;font-size:20px}
+.lk-dots{display:flex;gap:16px}
+.lk-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--muted);transition:.15s}
+.lk-dot.on{background:var(--accent);border-color:var(--accent)}
+.lk-dot.err{background:var(--danger);border-color:var(--danger)}
+.lk-msg{font-size:13px;font-weight:600;color:var(--muted);min-height:1.3em;text-align:center}
+.lk-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:min(288px,100%)}
+.lk-key{height:64px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-size:24px;font-weight:700;font-family:var(--f-display);touch-action:manipulation}
+.lk-key:active,.lk-key:focus-visible{background:var(--surface-2)}
+.lk-ph{background:none!important;border-color:transparent!important;pointer-events:none}
+@keyframes lk-shake{0%,100%{transform:none}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+.lk-shake{animation:lk-shake .3s ease}
 </style>
 
 <div class="app">
@@ -710,7 +724,12 @@ function vPrefs(){
     <div class="rows"><div class="row"><span class="l"><span><b>${esc(auth.user.name)}</b><br><small id="sync-txt">${esc(syncText())}</small></span></span></div></div>
     <p class="note">Өгөгдөл таны нууц үгээр утсан дээрээ шифрлэгдээд илгээгддэг тул сервер ч уншиж чадахгүй.</p>
     <div class="grid2" style="margin-top:12px">${auth.expired?'<button class="btn pri" data-act="auth" data-v="login">Дахин нэвтрэх</button>':'<button class="btn pri" data-act="sync-now">Одоо синк хийх</button>'}<button class="btn" data-act="logout">Гарах</button></div></section>`;
-  return `${account}<section class="card"><div class="sec-h"><h2>Данс</h2><button class="link" data-act="acc-new">+ Нэмэх</button></div><div class="rows">${S.accounts.map(a=>{const b=bankOf(a);return `<button class="row" data-act="acc-edit" data-id="${a.id}"><span class="l">${b?`<i class="dot" style="background:${b.color}"></i>`:''}<span><b>${esc(a.name)}</b><br><small>${b&&b.name!==a.name?esc(b.name)+' · ':''}${ACC_TYPES[a.type]||''}</small></span></span><b class="num">${fmt(balance(a))}</b></button>`}).join('')}</div></section>
+  const pinSection=`<section class="card"><div class="sec-h"><h2>Нууц код</h2></div>
+    ${pinStored()?`<p class="muted" style="margin:0 0 12px">4 оронтой нууц код тохируулагдсан байна.</p>
+    <div class="grid2"><button class="btn" data-act="pin-change">Код солих</button><button class="btn dng" data-act="pin-remove">Код устгах</button></div>`
+    :`<p class="muted" style="margin:0 0 12px">Аппыг нэгж болгон нэгж нэгдэхэд 4 оронтой нууц кодоор түгжих боломжтой.</p>
+    <button class="btn pri full" data-act="pin-set">Нууц код тохируулах</button>`}</section>`;
+  return `${account}${pinSection}<section class="card"><div class="sec-h"><h2>Данс</h2><button class="link" data-act="acc-new">+ Нэмэх</button></div><div class="rows">${S.accounts.map(a=>{const b=bankOf(a);return `<button class="row" data-act="acc-edit" data-id="${a.id}"><span class="l">${b?`<i class="dot" style="background:${b.color}"></i>`:''}<span><b>${esc(a.name)}</b><br><small>${b&&b.name!==a.name?esc(b.name)+' · ':''}${ACC_TYPES[a.type]||''}</small></span></span><b class="num">${fmt(balance(a))}</b></button>`}).join('')}</div></section>
   <section class="card"><div class="sec-h"><h2>Давтагдах гүйлгээ</h2></div>
     ${S.recurring.length?`<div class="rows">${S.recurring.slice().sort((a,b)=>a.day-b.day).map(r=>`<button class="row" data-act="rec-edit" data-id="${r.id}"><span class="l"><span><b>${esc(recTitle(r))}</b><br><small>Сар бүрийн ${r.day}-нд · ${r.type==='transfer'?esc(acc(r.accId).name+' → '+acc(r.toAccId).name):esc(acc(r.accId).name)}</small></span></span><b class="num ${r.type==='income'?'inc':r.type==='expense'?'exp':''}">${grp(r.amount)}₮</b></button>`).join('')}</div>`:''}
     <p class="note" style="${S.recurring.length?'':'border:0;margin:0;padding:0'}">Шинэ гүйлгээ нэмэхдээ <b>Сар бүр давтах</b>-ыг чагтлахад тухайн өдөр нь автоматаар бүртгэгдэнэ.</p></section>
@@ -737,10 +756,92 @@ function route(){const h=location.hash.slice(1);tab=['home','txs','budget','repo
 /* ---------- sheets ---------- */
 let lastFocus=null;
 function openSheet(html){lastFocus=document.activeElement;$('#sheet').innerHTML=html;$('#scrim').hidden=false;const f=$('#sheet').querySelector('[autofocus],input,button');if(f)setTimeout(()=>f.focus(),60)}
-function closeSheet(){$('#scrim').hidden=true;$('#sheet').innerHTML='';draft=null;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+function closeSheet(){$('#scrim').hidden=true;$('#sheet').innerHTML='';draft=null;pinSetState=null;pinSetBuf='';if(lastFocus&&lastFocus.focus)lastFocus.focus()}
 function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2200)}
 let confirmFn=null;
 function ask(msg,ok,fn){confirmFn=fn;openSheet(`<h3>${msg}</h3><div class="actions"><button class="btn" data-act="close">Болих</button><button class="btn pri" data-act="confirm-ok" style="background:var(--danger);color:#fff">${ok}</button></div>`)}
+
+/* ---------- PIN lock ---------- */
+const pinStored=()=>{try{return localStorage.getItem('togrog.pin')||null}catch(e){return null}};
+const pinHashFn=async p=>{const b=await crypto.subtle.digest('SHA-256',te.encode(p));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('')};
+let locked=false,pinBuf='',lkHiddenAt=0;
+const LK_TIMEOUT=5*60*1000;
+const LK_PAD=[1,2,3,4,5,6,7,8,9,'','0','del'];
+const lkPadHTML=pfx=>LK_PAD.map(k=>k===''?`<span class="lk-key lk-ph"></span>`:
+  `<button class="lk-key" data-act="pin-key" data-pfx="${pfx}" data-v="${k}">${k==='del'?'⌫':k}</button>`).join('');
+function showLock(err){
+  locked=true;pinBuf='';
+  let el=document.getElementById('lockscreen');
+  if(!el){el=document.createElement('div');el.id='lockscreen';document.body.appendChild(el)}
+  el.innerHTML=`<div class="lk-brand"><i>₮</i> Төгрөг</div>
+    <div class="lk-dots" id="lk-dots">${[0,1,2,3].map(()=>'<span class="lk-dot"></span>').join('')}</div>
+    <p class="lk-msg" id="lk-msg">${err||'Нууц кодоо оруулна уу'}</p>
+    <div class="lk-pad">${lkPadHTML('lk')}</div>`}
+function lkDots(ctx,buf,err){
+  document.querySelectorAll('#'+ctx+'-dots .lk-dot').forEach((d,i)=>{
+    d.className='lk-dot'+(i<buf.length?' on':'')+(err?' err':'')});
+}
+async function lkCheck(){
+  const h=await pinHashFn(pinBuf);pinBuf='';
+  if(h===pinStored()){locked=false;const el=document.getElementById('lockscreen');if(el)el.remove()}
+  else{
+    lkDots('lk',pinBuf,true);
+    const dots=document.getElementById('lk-dots');
+    if(dots){dots.classList.remove('lk-shake');void dots.offsetWidth;dots.classList.add('lk-shake')}
+    const msg=document.getElementById('lk-msg');
+    if(msg){msg.textContent='Буруу код. Дахин оруулна уу.';msg.style.color='var(--danger)'}
+    setTimeout(()=>lkDots('lk','',false),600);
+  }
+}
+let pinSetState=null,pinSetBuf='';
+function pinSheet(mode){
+  pinSetState={mode,phase:mode==='set'?'new':'old',first:''};pinSetBuf='';
+  const titles={set:'Нууц код тохируулах',change:'Нууц код солих',remove:'Нууц код устгах'};
+  const subs={set:'Шинэ 4 оронтой нууц код оруулна уу',change:'Одоогийн кодоо оруулна уу',remove:'Одоогийн кодоо оруулна уу'};
+  openSheet(`<h3>${titles[mode]}</h3>
+    <p class="muted" id="ps-sub" style="margin:0 0 6px">${subs[mode]}</p>
+    <div class="lk-dots" id="ps-dots" style="justify-content:center;margin:4px 0 0">${[0,1,2,3].map(()=>'<span class="lk-dot"></span>').join('')}</div>
+    <p class="lk-msg" id="ps-msg"></p>
+    <div class="lk-pad" style="margin:0 auto">${lkPadHTML('ps')}</div>
+    <button class="btn full" data-act="close" style="margin-top:6px">Болих</button>`);
+}
+async function psNext(){
+  const ps=pinSetState;if(!ps)return;
+  if(ps.phase==='old'){
+    const h=await pinHashFn(pinSetBuf);pinSetBuf='';
+    if(h!==pinStored()){
+      lkDots('ps','',true);
+      const dots=document.getElementById('ps-dots');
+      if(dots){dots.classList.remove('lk-shake');void dots.offsetWidth;dots.classList.add('lk-shake')}
+      const msg=document.getElementById('ps-msg');if(msg){msg.textContent='Буруу код';msg.style.color='var(--danger)'}
+      setTimeout(()=>lkDots('ps','',false),600);return;
+    }
+    if(ps.mode==='remove'){
+      try{localStorage.removeItem('togrog.pin')}catch(e){}
+      closeSheet();toast('Нууц код устгагдлаа');if(tab==='prefs')render();return;
+    }
+    ps.phase='new';pinSetBuf='';
+    const sub=document.getElementById('ps-sub');if(sub)sub.textContent='Шинэ 4 оронтой нууц код оруулна уу';
+    const msg=document.getElementById('ps-msg');if(msg)msg.textContent='';
+    lkDots('ps','',false);return;
+  }
+  if(ps.phase==='new'){ps.first=pinSetBuf;ps.phase='confirm';pinSetBuf='';
+    const sub=document.getElementById('ps-sub');if(sub)sub.textContent='Кодыг дахин оруулж баталгаажуулна уу';
+    lkDots('ps','',false);return;
+  }
+  if(ps.phase==='confirm'){
+    if(pinSetBuf!==ps.first){
+      ps.phase='new';ps.first='';pinSetBuf='';lkDots('ps','',true);
+      const dots=document.getElementById('ps-dots');
+      if(dots){dots.classList.remove('lk-shake');void dots.offsetWidth;dots.classList.add('lk-shake')}
+      const sub=document.getElementById('ps-sub');if(sub)sub.textContent='Таарсангүй. Дахин оруулна уу';
+      setTimeout(()=>lkDots('ps','',false),600);return;
+    }
+    const h=await pinHashFn(pinSetBuf);
+    try{localStorage.setItem('togrog.pin',h)}catch(e){}
+    closeSheet();toast('Нууц код тохируулагдлаа');if(tab==='prefs')render();
+  }
+}
 
 function authSheet(mode){
   const reg=mode==='register';draft={mode};
@@ -1054,6 +1155,22 @@ document.addEventListener('click',e=>{
     case 'logout':sync().finally(()=>{const n=pending();
       ask(n?`${n} өөрчлөлт серверт хүрээгүй байна. Гарвал эдгээр нь устна. Гарах уу?`:'Гарах уу? Таны өгөгдөл серверт хадгалагдсан тул дахин нэвтрэхэд буцаж татагдана.','Гарах',signOut)});break;
     case 'install':if(deferredInstall){deferredInstall.prompt();deferredInstall.userChoice.finally(()=>{deferredInstall=null;render()})}break;
+    case 'pin-set':pinSheet('set');break;
+    case 'pin-change':pinSheet('change');break;
+    case 'pin-remove':pinSheet('remove');break;
+    case 'pin-key':{const pfx=el.dataset.pfx,d=v;
+      if(pfx==='lk'&&locked){
+        if(d==='del'){pinBuf=pinBuf.slice(0,-1);lkDots('lk',pinBuf,false);break}
+        if(pinBuf.length>=4)break;
+        pinBuf+=d;lkDots('lk',pinBuf,false);
+        if(pinBuf.length===4)lkCheck();
+      }else if(pfx==='ps'&&pinSetState){
+        if(d==='del'){pinSetBuf=pinSetBuf.slice(0,-1);lkDots('ps',pinSetBuf,false);break}
+        if(pinSetBuf.length>=4)break;
+        pinSetBuf+=d;lkDots('ps',pinSetBuf,false);
+        if(pinSetBuf.length===4)psNext();
+      }
+      break}
   }
 });
 function showJson(txt){openSheet(`<h3>Нөөцлөл (JSON)</h3><textarea class="inp" id="f-json" readonly>${esc(txt)}</textarea><p class="muted">Текстийг сонгоод хуулна уу.</p><button class="btn full" data-act="close">Хаах</button>`);setTimeout(()=>{const t=$('#f-json');t.focus();t.select()},80)}
@@ -1107,10 +1224,12 @@ document.addEventListener('change',e=>{const i=e.target.dataset&&e.target.datase
 let swReg=null;
 function catchUp(){if(!$('#scrim').hidden)return;const n=applyRecurring(S);if(n){save();render();toast(n+' давтагдах гүйлгээ бүртгэгдлээ')}}
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'){sync().finally(catchUp);if(swReg)swReg.update().catch(()=>{})}
-  else if(auth&&pending())sync({keepalive:true});  // iOS may freeze the app any moment after this
+  if(document.visibilityState==='visible'){
+    if(pinStored()&&!locked&&Date.now()-lkHiddenAt>LK_TIMEOUT)showLock();
+    sync().finally(catchUp);if(swReg)swReg.update().catch(()=>{})
+  }else{lkHiddenAt=Date.now();if(auth&&pending())sync({keepalive:true})}
 });
-window.addEventListener('pagehide',()=>{if(auth&&pending()&&!syncing)sync({keepalive:true})});
+window.addEventListener('pagehide',()=>{lkHiddenAt=Date.now();if(auth&&pending()&&!syncing)sync({keepalive:true})});
 window.addEventListener('online',()=>sync());
 setInterval(()=>{if(document.visibilityState==='visible')sync()},60000);
 if(bc)bc.onmessage=async e=>{  // another tab changed data or signed in/out
@@ -1119,6 +1238,7 @@ if(bc)bc.onmessage=async e=>{  // another tab changed data or signed in/out
   const s=await store.get('data:'+scope());if(s){S=s;migrate()}
   if(auth){const y=await store.get('sync:'+scope());if(y)SY=y}
   render();syncUI()};
+if(pinStored())showLock();
 route();
 try{const sp=new URLSearchParams(location.search);const shared=[sp.get('title'),sp.get('text')].filter(Boolean).join('\n');
   if(shared){history.replaceState(null,'',location.pathname+'#txs');tab='txs';render();smsSheet(shared)}}catch(_){}
