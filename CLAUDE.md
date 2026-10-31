@@ -15,12 +15,12 @@ Current version: **1.3** (`sw.js` cache `togrog-v1.3.0-<commit>`). Author: Batts
 |---|---|
 | `src.html` | **Source of truth.** Page body + `<style>` + `<script>`, no `<html>/<head>/<body>` tags. Edit this one. |
 | `index.html` | **Generated** by `tools/build.py` (adds `<head>`, PWA meta, manifest/icon links). Do not edit by hand. |
-| `tools/build.py` | Builds `index.html`, `manifest.webmanifest`, and all icons from `src.html`. Needs Pillow. |
-| `sw.js` | Service worker: app shell cache-first, navigation network-first (falls back to cache after 4s), Google Fonts stale-while-revalidate, `/api/` never cached. `BUILD` is stamped with the commit by CI. |
+| `tools/build.py` | Builds `index.html`, `manifest.webmanifest`, and all icons from `src.html`, and stamps `sw.js` `BUILD`. Needs Pillow. |
+| `sw.js` | Service worker: app shell cache-first, navigation network-first (falls back to cache after 4s), Google Fonts stale-while-revalidate, `/api/` never cached. `BUILD` = hash of the built app, written by `build.py`. |
 | `api/index.php` | Sync API (register / login / logout / sync). Creates its tables on first register/login. |
 | `api/config.php` | DB credentials. **Not in git, not deployed**; created by hand on each server from `api/config.sample.php`. |
 | `api/.htaccess` | Only `index.php` is reachable. |
-| `.github/workflows/deploy.yml` | Push to `main` → build → lint → stamp `sw.js` → FTP upload to Hostinger (changed files only). |
+| `.htaccess` | Hides `.git`, `.github`, `tools/`, `src.html`, `*.md` (the whole repo is deployed); `no-cache` on `index.html`, `sw.js`, manifest. |
 | `manifest.webmanifest` | Generated. Includes `share_target` (GET, `title`/`text` params) for Android "Share → Төгрөг". |
 | `icon-192.png`, `icon-512.png`, `icon-maskable.png`, `apple-touch-icon.png` | Generated (₮ glyph on `#0F6B57`). |
 | `README.md` | Short user-facing run/deploy notes (Mongolian). |
@@ -41,15 +41,16 @@ Quick syntax check:
 node -e "const h=require('fs').readFileSync('index.html','utf8');new Function(h.split('<script>')[1].split('</script>')[0]);console.log('js ok')"
 ```
 
-Deploy: `git push` to `main`. GitHub Actions builds and uploads over FTP (secrets `FTP_SERVER`,
-`FTP_USERNAME`, `FTP_PASSWORD`, optional variable `FTP_DIR`, default `public_html/`). Server needs PHP 8.1+,
-MySQL, HTTPS, and `api/config.php`. All paths are relative, so a subfolder works.
+Deploy: **Hostinger hPanel → Git** deploys `main` straight into `public_html` (no build step on the server).
+So `index.html`, the icons, and the stamped `sw.js` must be committed: always run `tools/build.py` before
+committing. `api/config.php` is created by hand on the server and is gitignored, so deploys don't touch it.
+Server needs PHP 8.1+, MySQL, SSL. All paths are relative, so a subfolder works.
 
 Release checklist:
 1. Edit `src.html`
-2. Bump the version label in `vPrefs()` ("Төгрөг · хувилбар X.Y") and the version in `sw.js` `VERSION` if it is a feature release
-3. `python3 tools/build.py`, syntax check, commit `index.html` too
-4. Push. CI stamps `sw.js` with the commit, so the cache refreshes on every deploy even without a version bump
+2. Bump the version label in `vPrefs()` ("Төгрөг · хувилбар X.Y") and `VERSION` in `sw.js` for a feature release
+3. `python3 tools/build.py` (also gives `sw.js` a new `BUILD`, so phones drop the old cache), syntax check
+4. Commit everything, including `index.html` and `sw.js`, and push to `main`
 5. Test on an iPhone (installed PWA) and Android
 
 ## 3. Data model

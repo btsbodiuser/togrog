@@ -40,3 +40,8 @@ head='''<!doctype html>
 '''
 title_end=src.index('<style>')
 open('index.html','w',encoding='utf-8').write(head+src[:title_end]+'</head>\n<body>\n'+src[title_end:]+'\n</body>\n</html>\n')
+# Stamp sw.js with a hash of the built app, so every change gets a new cache name (Hostinger Git deploy has no build step)
+import hashlib, re
+h=hashlib.sha1(open('index.html','rb').read()+open('manifest.webmanifest','rb').read()).hexdigest()[:8]
+sw=open('sw.js',encoding='utf-8').read()
+open('sw.js','w',encoding='utf-8',newline='').write(re.sub(r"const BUILD='[^']*';",f"const BUILD='{h}';",sw))

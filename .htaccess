@@ -1,0 +1,17 @@
+# Hostinger Git deploy copies the whole repo into public_html: hide everything that isn't the app
+RedirectMatch 404 /\.git(/|$)
+RedirectMatch 404 /\.github(/|$)
+RedirectMatch 404 /\.gitignore$
+RedirectMatch 404 /tools(/|$)
+RedirectMatch 404 /(CLAUDE|README)\.md$
+RedirectMatch 404 /src\.html$
+Options -Indexes
+
+AddType application/manifest+json .webmanifest
+
+# The app shell must always be revalidated, or iOS keeps an old version
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|sw\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

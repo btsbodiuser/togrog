@@ -17,20 +17,18 @@
 
 PWA ба шифрлэлт нь HTTPS эсвэл `localhost` шаарддаг (утаснаас LAN IP-аар http-ээр нээвэл нэвтрэх ажиллахгүй).
 
-## Hostinger руу автоматаар байршуулах
-`main` руу push хийх бүрт GitHub Actions (`.github/workflows/deploy.yml`) build хийгээд FTP-ээр зөвхөн өөрчлөгдсөн файлуудыг илгээнэ.
-Нэг удаа тохируулна:
-1. Hostinger → **Databases → MySQL**: өгөгдлийн сан, хэрэглэгч үүсгэнэ.
-2. Hostinger → **File Manager**: `public_html/api/config.php` файлыг `config.sample.php`-ийн дагуу үүсгэнэ (git-д орохгүй, deploy үүнийг дарахгүй).
-3. Hostinger → **FTP Accounts**: FTP хост, хэрэглэгч, нууц үгээ авна.
-4. GitHub repo → **Settings → Secrets and variables → Actions**:
-   secrets `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD`; дэд хавтас бол variable `FTP_DIR` (жишээ нь `public_html/togrog/`).
-5. Hostinger дээр SSL асаалттай, PHP 8.1+ байх ёстой.
+## Hostinger руу байршуулах
+Hostinger hPanel → **Git** нь `main` салбарыг шууд `public_html` руу хуулдаг (серверт build хийхгүй). Тиймээс:
+1. `src.html`-ийг засаад `python tools/build.py` ажиллуулна. Энэ нь `index.html`, дүрснүүдийг үүсгэж, `sw.js`-д шинэ кэшийн дугаар өгнө.
+2. Бүх файлыг (`index.html`, `sw.js`-ийг оролцуулаад) commit хийгээд `main` руу push хийнэ.
+3. hPanel дээр **Auto Deployment** асаалттай бол автоматаар шинэчлэгдэнэ, эс бөгөөс **Deploy** товч дарна.
 
-Deploy бүр `sw.js`-ийн кэшийн нэрийг commit-оор шинэчилдэг тул хэрэглэгчид шинэ хувилбараа автоматаар авна.
+Нэг удаагийн тохиргоо: MySQL өгөгдлийн сан, `public_html/api/config.php` (`config.sample.php`-ийн дагуу), SSL, PHP 8.1+.
+`.htaccess` нь `.git`, `src.html`, `tools/`, `*.md` зэрэг дотоод файлуудыг нийтээс нууна.
 
 ## Файлууд
 - src.html — апп-ын эх (үүнийг засна), index.html — `tools/build.py`-аар үүсдэг
 - sw.js — офлайн кэш
 - api/index.php — синк API, api/config.php — DB тохиргоо (git-д ороогүй)
+- .htaccess — дотоод файлуудыг нууж, апп-ын кэшийг зөв удирдана
 - manifest.webmanifest, icon-*.png — суулгах мэдээлэл (build-ээр үүснэ)

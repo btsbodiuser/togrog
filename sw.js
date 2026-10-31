@@ -1,6 +1,6 @@
 // Төгрөг service worker — app shell cache-first, navigation network-first (4s timeout), Google Fonts stale-while-revalidate.
-// BUILD is replaced with the commit hash by the deploy workflow, so every push gets a fresh cache.
-const BUILD='dev';
+// BUILD is a hash of index.html + manifest, written by tools/build.py, so every change gets a fresh cache.
+const BUILD='3f2b95c1';
 const VERSION='togrog-v1.3.0-'+BUILD;
 const SHELL=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png','./icon-maskable.png','./apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
